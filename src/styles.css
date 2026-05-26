@@ -266,6 +266,37 @@ button:disabled {
   text-overflow: ellipsis;
 }
 
+.mobile-account-menu {
+  display: none;
+  position: relative;
+}
+
+.account-menu-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 8px;
+  min-width: min(280px, calc(100vw - 32px));
+  padding: 10px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 60;
+}
+
+.account-menu-panel .ghost-button,
+.account-menu-panel .user-chip {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.menu-user-chip {
+  border-radius: 8px;
+  min-height: 42px;
+}
+
 .user-chip img {
   border-radius: 999px;
   height: 22px;
@@ -1137,7 +1168,6 @@ textarea:focus {
 }
 
 @media (max-width: 850px) {
-  .topbar,
   .dashboard-hero,
   .hero,
   .interview-main,
@@ -1147,12 +1177,22 @@ textarea:focus {
   }
 
   .topbar {
-    align-items: flex-start;
-    display: grid;
+    align-items: center;
+    gap: 12px;
   }
 
   .topbar-actions {
-    width: 100%;
+    flex: 0 0 auto;
+    margin-left: auto;
+    width: auto;
+  }
+
+  .desktop-nav-control {
+    display: none;
+  }
+
+  .mobile-account-menu {
+    display: block;
   }
 
   .hero-panel {
@@ -1192,16 +1232,28 @@ textarea:focus {
 }
 
 @media (max-width: 560px) {
-  .brand small,
-  .mode-pill {
+  .brand small {
     display: none;
   }
 
-  .primary-button,
+  .hero-actions .primary-button,
   .secondary-button,
-  .ghost-button,
+  .dashboard-actions .ghost-button,
   .danger-button {
     width: 100%;
+  }
+
+  .topbar {
+    padding-bottom: 10px;
+  }
+
+  .brand strong {
+    font-size: 0.95rem;
+  }
+
+  .brand-mark {
+    height: 36px;
+    width: 36px;
   }
 
   .section-heading,

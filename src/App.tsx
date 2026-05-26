@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogIn,
   LogOut,
+  Menu,
   Moon,
   Plus,
   ShieldCheck,
@@ -113,6 +114,7 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [theme, setTheme] = useState<ThemePreference>(getInitialTheme);
   const [view, setView] = useState<AppView>("home");
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const openInSafariUrl = `${window.location.origin}${import.meta.env.BASE_URL}`;
   const authLoading = authPhase !== "idle";
 
@@ -124,6 +126,17 @@ function App() {
       .querySelector('meta[name="theme-color"]:not([media])')
       ?.setAttribute("content", themeColor);
   }, [theme]);
+
+  useEffect(() => {
+    if (!isAccountMenuOpen) return;
+    const closeMenu = () => setIsAccountMenuOpen(false);
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("orientationchange", closeMenu);
+    return () => {
+      window.removeEventListener("resize", closeMenu);
+      window.removeEventListener("orientationchange", closeMenu);
+    };
+  }, [isAccountMenuOpen]);
 
   useEffect(() => {
     if (!firebaseAuth) return;
@@ -292,9 +305,12 @@ function App() {
   const handleSignOut = async () => {
     if (firebaseAuth) await signOut(firebaseAuth);
     window.localStorage.removeItem("interview-manager:demo-user");
+    setIsAccountMenuOpen(false);
     setUser(null);
     setView("home");
   };
+
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
   return (
     <main>
@@ -315,8 +331,11 @@ function App() {
         <nav className="topbar-actions" aria-label="Primary">
           {user ? (
             <button
-              className="ghost-button"
-              onClick={() => setView("dashboard")}
+              className="ghost-button desktop-nav-control"
+              onClick={() => {
+                setView("dashboard");
+                setIsAccountMenuOpen(false);
+              }}
               aria-current={view === "dashboard" ? "page" : undefined}
             >
               <LayoutDashboard size={17} />
@@ -324,27 +343,64 @@ function App() {
             </button>
           ) : null}
           <button
-            className="icon-button"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="icon-button desktop-nav-control"
+            onClick={toggleTheme}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <span className="mode-pill">
+          <span className="mode-pill desktop-nav-control">
             <ShieldCheck size={15} />
             {authModeLabel}
           </span>
           {user ? (
             <>
-              <span className="user-chip">
+              <span className="user-chip desktop-nav-control">
                 {user.photoURL ? <img src={user.photoURL} alt="" /> : null}
                 {user.displayName}
               </span>
-              <button className="ghost-button" onClick={handleSignOut}>
+              <button className="ghost-button desktop-nav-control" onClick={handleSignOut}>
                 <LogOut size={17} />
                 Sign out
               </button>
+              <div className="mobile-account-menu">
+                <button
+                  className="icon-button"
+                  onClick={() => setIsAccountMenuOpen((current) => !current)}
+                  aria-expanded={isAccountMenuOpen}
+                  aria-label="Open account menu"
+                >
+                  <Menu size={19} />
+                </button>
+                {isAccountMenuOpen ? (
+                  <div className="account-menu-panel">
+                    <button
+                      className="ghost-button"
+                      onClick={() => {
+                        setView("dashboard");
+                        setIsAccountMenuOpen(false);
+                      }}
+                      aria-current={view === "dashboard" ? "page" : undefined}
+                    >
+                      <LayoutDashboard size={17} />
+                      Dashboard
+                    </button>
+                    <button className="ghost-button" onClick={toggleTheme}>
+                      {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+                      {theme === "dark" ? "Light mode" : "Dark mode"}
+                    </button>
+                    <span className="user-chip menu-user-chip">
+                      {user.photoURL ? <img src={user.photoURL} alt="" /> : null}
+                      {user.displayName}
+                    </span>
+                    <button className="ghost-button" onClick={handleSignOut}>
+                      <LogOut size={17} />
+                      Sign out
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </>
           ) : (
             <button className="primary-button" onClick={handleSignIn} disabled={authLoading}>
