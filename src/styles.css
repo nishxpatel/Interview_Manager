@@ -662,6 +662,14 @@ h1 {
   padding: 14px;
 }
 
+.list-toolbar {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 1fr) minmax(210px, 0.45fr) auto;
+  margin-bottom: 12px;
+}
+
 .filter-search {
   grid-column: span 2;
 }
@@ -680,7 +688,8 @@ h1 {
   z-index: 1;
 }
 
-.input-with-icon input {
+.input-with-icon input,
+.input-with-icon select {
   grid-column: 1 / -1;
   grid-row: 1;
   padding-left: 38px;
@@ -1230,6 +1239,7 @@ textarea:focus {
   .analytics-grid,
   .form-grid,
   .filter-panel,
+  .list-toolbar,
   .contact-grid,
   .preview-import-meta {
     grid-template-columns: 1fr;
@@ -1262,6 +1272,8 @@ textarea:focus {
   .secondary-button,
   .dashboard-actions .ghost-button,
   .dashboard-actions .file-action-button,
+  .list-toolbar .ghost-button,
+  .card-actions .ghost-button,
   .danger-button {
     width: 100%;
   }

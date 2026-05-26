@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarClock, ChevronDown, ChevronUp, Edit3, ExternalLink, Trash2 } from "lucide-react";
+import { CalendarClock, ChevronDown, ChevronUp, Edit3, ExternalLink } from "lucide-react";
 import {
   PIPELINE_STEPS,
   type Interview,
@@ -18,7 +18,6 @@ import {
 interface InterviewListProps {
   interviews: Interview[];
   onEdit: (interview: Interview, focusField?: MissingFieldKey) => void;
-  onDelete: (interviewId: string) => Promise<void>;
   onPipelineChange: (interview: Interview, pipeline: PipelineStep) => Promise<void>;
 }
 
@@ -43,7 +42,6 @@ const contactPreviewLimit = 3;
 export function InterviewList({
   interviews,
   onEdit,
-  onDelete,
   onPipelineChange
 }: InterviewListProps) {
   if (!interviews.length) {
@@ -62,7 +60,6 @@ export function InterviewList({
         <InterviewCard
           key={interview.id}
           interview={interview}
-          onDelete={onDelete}
           onEdit={onEdit}
           onPipelineChange={onPipelineChange}
         />
@@ -74,7 +71,6 @@ export function InterviewList({
 function InterviewCard({
   interview,
   onEdit,
-  onDelete,
   onPipelineChange
 }: InterviewCardProps) {
   const [contactsExpanded, setContactsExpanded] = useState(false);
@@ -107,7 +103,6 @@ function InterviewCard({
             {normalized.roundLabel ? <span>{normalized.roundLabel}</span> : null}
             {dateLabel ? <span>{dateLabel}</span> : showScheduledTags ? <span>Date not scheduled</span> : null}
             {formatLabel ? <span>{formatLabel}</span> : showScheduledTags ? <span>Format not set</span> : null}
-            {normalized.source === "drexel-import" ? <span>Drexel import</span> : null}
           </div>
           {countdown ? <p className="countdown-pill">{countdown}</p> : null}
         </div>
@@ -229,15 +224,6 @@ function InterviewCard({
         <button className="ghost-button" onClick={() => onEdit(normalized)}>
           <Edit3 size={16} />
           Edit
-        </button>
-        <button
-          className="danger-button"
-          onClick={() => {
-            if (window.confirm("Delete this interview?")) void onDelete(normalized.id);
-          }}
-        >
-          <Trash2 size={16} />
-          Delete
         </button>
       </div>
     </article>

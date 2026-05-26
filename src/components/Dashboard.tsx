@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
-import { Download, FileUp, Plus, RotateCcw, Search, Trash2, Upload } from "lucide-react";
+import {
+  ArrowUpDown,
+  Download,
+  FileUp,
+  Plus,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
+  Trash2,
+  Upload
+} from "lucide-react";
 import { AnalyticsPanel } from "./AnalyticsPanel";
 import { DrexelImport } from "./DrexelImport";
 import { InterviewForm } from "./InterviewForm";
@@ -49,6 +59,7 @@ interface DashboardFilters {
   contact: string;
   format: string;
   location: string;
+  sort: string;
   source: string;
 }
 
@@ -64,8 +75,25 @@ const emptyFilters: DashboardFilters = {
   contact: "",
   format: "",
   location: "",
+  sort: "updated-desc",
   source: ""
 };
+
+const sortOptions = [
+  ["updated-desc", "Recently updated"],
+  ["updated-asc", "Least recently updated"],
+  ["created-desc", "Newest added"],
+  ["created-asc", "Oldest added"],
+  ["date-asc", "Interview date soonest"],
+  ["date-desc", "Interview date latest"],
+  ["company-asc", "Company A-Z"],
+  ["company-desc", "Company Z-A"],
+  ["position-asc", "Position A-Z"],
+  ["position-desc", "Position Z-A"],
+  ["pipeline-asc", "Pipeline step"],
+  ["missing-desc", "Most missing fields"],
+  ["source-asc", "Source"]
+] as const;
 
 export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
   const [interviews, setInterviews] = useState<Interview[]>([]);
@@ -81,6 +109,7 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
   const [deletingAll, setDeletingAll] = useState(false);
   const [migratingLocal, setMigratingLocal] = useState(false);
   const [filters, setFilters] = useState<DashboardFilters>(emptyFilters);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     return watchInterviews(user.uid, setInterviews, setError);
@@ -94,6 +123,21 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
     const from = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`) : null;
     const to = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59`) : null;
     const now = new Date();
+
+    const sortDate = (value?: string) => {
+      if (!value) return Number.POSITIVE_INFINITY;
+      const time = new Date(value).getTime();
+      return Number.isNaN(time) ? Number.POSITIVE_INFINITY : time;
+    };
+    const compareDateDesc = (left?: string, right?: string) => {
+      const a = sortDate(left);
+      const b = sortDate(right);
+      if (!Number.isFinite(a) && !Number.isFinite(b)) return 0;
+      if (!Number.isFinite(a)) return 1;
+      if (!Number.isFinite(b)) return -1;
+      return b - a;
+    };
+    const sortText = (value?: string) => (value ?? "").toLowerCase();
 
     return interviews.filter((item) => {
       const normalized = normalizeInterview(item);
@@ -142,6 +186,41 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
           [normalized.locationOrLink, normalized.interviewFormat].join(" ").toLowerCase().includes(location)) &&
         (!filters.source || (normalized.source ?? "manual") === filters.source)
       );
+    }).sort((left, right) => {
+      const a = normalizeInterview(left);
+      const b = normalizeInterview(right);
+      const aMissing = getMissingFields(a).length;
+      const bMissing = getMissingFields(b).length;
+
+      switch (filters.sort) {
+        case "updated-asc":
+          return sortDate(a.updatedAt) - sortDate(b.updatedAt);
+        case "created-desc":
+          return compareDateDesc(a.createdAt, b.createdAt);
+        case "created-asc":
+          return sortDate(a.createdAt) - sortDate(b.createdAt);
+        case "date-asc":
+          return sortDate(a.interviewDateTime) - sortDate(b.interviewDateTime);
+        case "date-desc":
+          return compareDateDesc(a.interviewDateTime, b.interviewDateTime);
+        case "company-asc":
+          return sortText(a.company).localeCompare(sortText(b.company));
+        case "company-desc":
+          return sortText(b.company).localeCompare(sortText(a.company));
+        case "position-asc":
+          return sortText(a.position).localeCompare(sortText(b.position));
+        case "position-desc":
+          return sortText(b.position).localeCompare(sortText(a.position));
+        case "pipeline-asc":
+          return PIPELINE_STEPS.indexOf(a.pipeline) - PIPELINE_STEPS.indexOf(b.pipeline);
+        case "missing-desc":
+          return bMissing - aMissing || sortText(a.company).localeCompare(sortText(b.company));
+        case "source-asc":
+          return sortText(a.source ?? "manual").localeCompare(sortText(b.source ?? "manual"));
+        case "updated-desc":
+        default:
+          return compareDateDesc(a.updatedAt, b.updatedAt);
+      }
     });
   }, [filters, interviews]);
 
@@ -160,7 +239,11 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
   }, [interviews]);
 
   const hasActiveFilters = Object.entries(filters).some(([key, value]) =>
-    key === "activity" || key === "missing" ? value !== "all" : Boolean(value)
+    key === "activity" || key === "missing"
+      ? value !== "all"
+      : key === "sort"
+        ? value !== "updated-desc"
+        : Boolean(value)
   );
 
   const openNewForm = () => {
@@ -224,10 +307,24 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
 
   const handleDeleteAll = async () => {
     if (!interviews.length) return;
-    const confirmed = window.confirm(
-      `Delete all ${interviews.length} interview entries for this account? This cannot be undone.`
+    const firstConfirm = window.confirm(
+      `Step 1 of 3: Delete all ${interviews.length} interview entries for this account? This cannot be undone.`
     );
-    if (!confirmed) return;
+    if (!firstConfirm) return;
+
+    const typed = window.prompt(
+      `Step 2 of 3: Type DELETE ALL to confirm permanent deletion of ${interviews.length} entries.`
+    );
+    if (typed === null) return;
+    if (typed.trim() !== "DELETE ALL") {
+      setError("Delete all cancelled because the confirmation text did not match DELETE ALL.");
+      return;
+    }
+
+    const finalConfirm = window.confirm(
+      "Step 3 of 3: Final confirmation. Permanently delete every interview entry now?"
+    );
+    if (!finalConfirm) return;
 
     setDeletingAll(true);
     setError("");
@@ -354,7 +451,7 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
           ) : null}
         </div>
 
-        <div className="filter-panel">
+        <div className="list-toolbar">
           <label className="field filter-search">
             <span>Search</span>
             <div className="input-with-icon">
@@ -366,6 +463,30 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
               />
             </div>
           </label>
+          <label className="field">
+            <span>Sort</span>
+            <div className="input-with-icon">
+              <ArrowUpDown size={16} />
+              <select
+                value={filters.sort}
+                onChange={(event) => updateFilter("sort", event.target.value)}
+              >
+                {sortOptions.map(([value, label]) => (
+                  <option value={value} key={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </label>
+          <button className="ghost-button" onClick={() => setShowFilters((current) => !current)}>
+            <SlidersHorizontal size={16} />
+            {showFilters ? "Hide filters" : "Show filters"}
+          </button>
+        </div>
+
+        {showFilters ? (
+          <div className="filter-panel">
           <label className="field">
             <span>Company</span>
             <select
@@ -479,7 +600,8 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
               ))}
             </select>
           </label>
-        </div>
+          </div>
+        ) : null}
         <InterviewList
           interviews={filteredInterviews}
           onEdit={(interview, focusField) => {
@@ -487,7 +609,6 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
             setSelectedFocus(focusField);
             setIsFormOpen(true);
           }}
-          onDelete={(interviewId) => deleteInterview(user.uid, interviewId)}
           onPipelineChange={(interview, pipeline) =>
             updateInterview(user.uid, interview.id, {
               ...interviewToDraft(interview),
@@ -507,6 +628,16 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
             setSelectedFocus(undefined);
           }}
           onSave={handleSave}
+          onDelete={
+            selectedInterview
+              ? async () => {
+                  await deleteInterview(user.uid, selectedInterview.id);
+                  setIsFormOpen(false);
+                  setSelectedInterview(null);
+                  setSelectedFocus(undefined);
+                }
+              : undefined
+          }
         />
       ) : null}
 

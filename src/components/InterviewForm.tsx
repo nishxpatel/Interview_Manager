@@ -44,10 +44,11 @@ interface InterviewFormProps {
   interview: Interview | null;
   initialFocus?: MissingFieldKey;
   onCancel: () => void;
+  onDelete?: () => Promise<void>;
   onSave: (draft: InterviewDraft) => Promise<void>;
 }
 
-export function InterviewForm({ interview, initialFocus, onCancel, onSave }: InterviewFormProps) {
+export function InterviewForm({ interview, initialFocus, onCancel, onDelete, onSave }: InterviewFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [draft, setDraft] = useState<InterviewDraft>(() => {
     const nextDraft = toDraft(interview);
@@ -57,6 +58,7 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
     return nextDraft;
   });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -146,6 +148,24 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
       setError(saveError instanceof Error ? saveError.message : "Unable to save interview.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!interview || !onDelete) return;
+    const confirmed = window.confirm(
+      `Delete ${interview.company || "this interview"} - ${interview.position || "untitled role"}? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError("");
+    try {
+      await onDelete();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Unable to delete interview.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -417,6 +437,17 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
         </div>
 
         <div className="modal-actions">
+          {interview ? (
+            <button
+              type="button"
+              className="danger-button"
+              onClick={handleDelete}
+              disabled={saving || deleting}
+            >
+              <Trash2 size={17} />
+              {deleting ? "Deleting..." : "Delete interview"}
+            </button>
+          ) : null}
           <button type="button" className="ghost-button" onClick={onCancel}>
             Cancel
           </button>
