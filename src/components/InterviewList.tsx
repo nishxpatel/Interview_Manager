@@ -1,4 +1,5 @@
-import { CalendarClock, Edit3, ExternalLink, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { CalendarClock, ChevronDown, ChevronUp, Edit3, ExternalLink, Trash2 } from "lucide-react";
 import {
   PIPELINE_STEPS,
   type Interview,
@@ -74,12 +75,15 @@ function InterviewCard({
   onDelete,
   onPipelineChange
 }: InterviewCardProps) {
+  const [contactsExpanded, setContactsExpanded] = useState(false);
   const normalized = normalizeInterview(interview);
   const contacts = normalizeContacts(normalized);
   const missingFields = getMissingFields(normalized);
   const countdown = isScheduledPipeline(normalized.pipeline)
     ? getCountdownText(normalized.interviewDateTime)
     : "";
+  const visibleContacts = contactsExpanded ? contacts : contacts.slice(0, 2);
+  const hiddenContactCount = Math.max(0, contacts.length - visibleContacts.length);
 
   return (
     <article className="interview-card">
@@ -122,27 +126,8 @@ function InterviewCard({
         </div>
       ) : null}
 
-      <div className="interview-details">
-        <span>
-          <strong>Contacts</strong>
-          {contacts.length ? (
-            <span className="contact-list">
-              {contacts.map((contact) => (
-                <span className="contact-pill" key={contact.id}>
-                  <b>{contact.name || contact.email || "Unnamed contact"}</b>
-                  {contact.title ? <small>{contact.title}</small> : null}
-                  {contact.email ? <a href={`mailto:${contact.email}`}>{contact.email}</a> : null}
-                  {contact.phone ? <small>{contact.phone}</small> : null}
-                </span>
-              ))}
-            </span>
-          ) : (
-            <button className="missing-inline" onClick={() => onEdit(normalized, "contacts")}>
-              Add contact
-            </button>
-          )}
-        </span>
-        <span>
+      <div className="interview-summary-grid">
+        <span className="summary-item">
           <strong>Location/link</strong>
           {normalized.locationOrLink ? (
             normalized.locationOrLink.startsWith("http") ? (
@@ -158,7 +143,7 @@ function InterviewCard({
             </button>
           )}
         </span>
-        <span>
+        <span className="summary-item">
           <strong>Links</strong>
           {(normalized.links ?? []).length ? (
             <span className="link-list">
@@ -174,7 +159,54 @@ function InterviewCard({
         </span>
       </div>
 
-      {(normalized.questions || normalized.notes || contacts.some((contact) => contact.notes)) && (
+      <section className="contacts-compact" aria-label="Contacts">
+        <div className="compact-section-heading">
+          <strong>Contacts ({contacts.length})</strong>
+          {contacts.length > 2 ? (
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => setContactsExpanded((current) => !current)}
+            >
+              {contactsExpanded ? (
+                <>
+                  Show fewer <ChevronUp size={14} />
+                </>
+              ) : (
+                <>
+                  Show {hiddenContactCount} more <ChevronDown size={14} />
+                </>
+              )}
+            </button>
+          ) : null}
+        </div>
+        {contacts.length ? (
+          <div className="contact-compact-list">
+            {visibleContacts.map((contact) => (
+              <div className="contact-compact-row" key={contact.id}>
+                <span className="contact-identity">
+                  <b>{contact.name || contact.email || "Unnamed contact"}</b>
+                  {contact.title ? <small>{contact.title}</small> : null}
+                </span>
+                <span className="contact-methods">
+                  {contact.email ? <a href={`mailto:${contact.email}`}>{contact.email}</a> : null}
+                  {contact.phone ? <a href={`tel:${contact.phone}`}>{contact.phone}</a> : null}
+                </span>
+                {contact.notes ? <p>{contact.notes}</p> : null}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-compact-row">
+            <span>No contacts yet</span>
+            <button className="missing-inline" onClick={() => onEdit(normalized, "contacts")}>
+              Add contact
+            </button>
+          </div>
+        )}
+      </section>
+
+      {(normalized.questions || normalized.notes) && (
         <div className="notes-preview">
           {normalized.questions ? (
             <p>
@@ -186,13 +218,6 @@ function InterviewCard({
               <strong>Notes:</strong> {normalized.notes}
             </p>
           ) : null}
-          {contacts
-            .filter((contact) => contact.notes)
-            .map((contact) => (
-              <p key={`${contact.id}-notes`}>
-                <strong>{contact.name || "Contact"}:</strong> {contact.notes}
-              </p>
-            ))}
         </div>
       )}
 

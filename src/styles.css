@@ -193,6 +193,18 @@ a {
   color: var(--ink);
 }
 
+.text-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--blue);
+  display: inline-flex;
+  font-weight: 700;
+  gap: 4px;
+  min-height: 30px;
+  padding: 3px 0;
+}
+
 .danger-button {
   background: var(--danger-bg);
   border-color: var(--danger-border);
@@ -733,65 +745,125 @@ textarea:focus {
   min-height: 40px;
 }
 
-.interview-details {
+.interview-summary-grid {
   border-top: 1px solid var(--subtle);
   display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   margin-top: 14px;
   padding-top: 14px;
 }
 
-.interview-details span {
-  color: var(--muted);
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
-
-.contact-list {
-  display: grid;
-  gap: 7px;
-}
-
-.contact-pill {
+.summary-item {
+  align-content: start;
   background: var(--surface-strong);
   border: 1px solid var(--subtle);
   border-radius: 8px;
-  display: grid;
-  gap: 2px;
-  padding: 9px;
-}
-
-.contact-pill b {
-  color: var(--ink);
-}
-
-.contact-pill small {
   color: var(--muted);
+  display: grid;
+  gap: 6px;
+  min-height: 68px;
+  min-width: 0;
+  padding: 10px 12px;
 }
 
-.interview-details strong {
+.summary-item strong,
+.compact-section-heading strong {
   color: var(--ink);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
 }
 
-.interview-details a {
+.summary-item a,
+.contact-methods a {
   align-items: center;
   color: var(--blue);
   display: inline-flex;
   gap: 5px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.contacts-compact {
+  border-top: 1px solid var(--subtle);
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.compact-section-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.contact-compact-list {
+  display: grid;
+  gap: 7px;
+}
+
+.contact-compact-row {
+  align-items: start;
+  background: var(--surface-strong);
+  border: 1px solid var(--subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px 12px;
+  grid-template-columns: minmax(170px, 0.75fr) minmax(220px, 1fr);
+  padding: 9px 11px;
+}
+
+.contact-identity {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.contact-identity b {
+  color: var(--ink);
+}
+
+.contact-identity small,
+.contact-compact-row p,
+.empty-compact-row span {
+  color: var(--muted);
+}
+
+.contact-methods {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+.contact-compact-row p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.empty-compact-row {
+  align-items: center;
+  background: var(--surface-strong);
+  border: 1px dashed var(--subtle);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 9px 11px;
 }
 
 .notes-preview {
-  background: var(--surface-strong);
+  background: color-mix(in srgb, var(--surface-strong) 72%, transparent);
   border: 1px solid var(--subtle);
   border-radius: 8px;
   color: var(--muted);
   margin-top: 14px;
-  max-height: 150px;
+  max-height: 130px;
   overflow: auto;
-  padding: 12px;
+  padding: 10px 12px;
 }
 
 .notes-preview p {
@@ -976,7 +1048,8 @@ textarea:focus {
   .dashboard-hero,
   .hero,
   .interview-main,
-  .interview-details {
+  .interview-summary-grid,
+  .contact-compact-row {
     grid-template-columns: 1fr;
   }
 
