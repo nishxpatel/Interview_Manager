@@ -3,6 +3,7 @@ import {
   type Interview,
   type InterviewContact,
   type InterviewDraft,
+  type InterviewLink,
   type MissingFieldKey,
   type PipelineStep
 } from "../types/interview";
@@ -16,6 +17,13 @@ export const createBlankContact = (): InterviewContact => ({
   notes: ""
 });
 
+export const createBlankLink = (): InterviewLink => ({
+  id: crypto.randomUUID(),
+  label: "",
+  url: "",
+  type: "other"
+});
+
 const hasContactValue = (contact: InterviewContact) =>
   Boolean(
     contact.name.trim() ||
@@ -24,6 +32,16 @@ const hasContactValue = (contact: InterviewContact) =>
       contact.phone?.trim() ||
       contact.notes?.trim()
   );
+
+const hasLinkValue = (link: InterviewLink) => Boolean(link.url.trim());
+
+const inferLinkType = (url: string, label = ""): InterviewLink["type"] => {
+  const text = `${url} ${label}`.toLowerCase();
+  if (/job|posting|display|i_job_num/.test(text)) return "job-description";
+  if (/interview|schedule/.test(text)) return "interview";
+  if (/employer|company/.test(text)) return "employer";
+  return "other";
+};
 
 export const isScheduledPipeline = (pipeline?: string) =>
   SCHEDULED_PIPELINE_STEPS.includes(pipeline as PipelineStep);
@@ -83,14 +101,47 @@ export const normalizeContacts = (interview: Partial<InterviewDraft>): Interview
   return [];
 };
 
+export const normalizeLinks = (interview: Partial<InterviewDraft>): InterviewLink[] => {
+  const links = (interview.links ?? []).filter(hasLinkValue).map((link) => ({
+    ...link,
+    id: link.id || crypto.randomUUID(),
+    label: link.label?.trim() || "Link",
+    url: link.url.trim(),
+    type: link.type ?? inferLinkType(link.url, link.label)
+  }));
+
+  if (interview.jobDescriptionLink?.trim()) {
+    links.unshift({
+      id: crypto.randomUUID(),
+      label: "Job description",
+      url: interview.jobDescriptionLink.trim(),
+      type: "job-description"
+    });
+  }
+
+  const seen = new Set<string>();
+  return links.filter((link) => {
+    const key = link.url.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 export const normalizeInterview = (interview: Interview): Interview => {
   const contacts = normalizeContacts(interview);
+  const links = normalizeLinks(interview);
+  const jobDescriptionLink =
+    interview.jobDescriptionLink ??
+    links.find((link) => link.type === "job-description" || link.type === "posting")?.url ??
+    "";
   return {
     ...interview,
     pipeline: mapLegacyPipeline(interview),
     interviewFormat: interview.interviewFormat ?? "Unknown",
     roundLabel: interview.roundLabel ?? "",
-    jobDescriptionLink: interview.jobDescriptionLink ?? "",
+    jobDescriptionLink,
+    links,
     contacts,
     contactPerson: interview.contactPerson ?? contacts[0]?.name ?? ""
   };
@@ -111,6 +162,7 @@ export const interviewToDraft = (interview: Interview): InterviewDraft => {
     contacts: normalized.contacts ?? [],
     locationOrLink: normalized.locationOrLink ?? "",
     jobDescriptionLink: normalized.jobDescriptionLink ?? "",
+    links: normalized.links ?? [],
     notes: normalized.notes ?? "",
     questions: normalized.questions ?? "",
     followUpReminder: normalized.followUpReminder ?? "",
@@ -122,11 +174,17 @@ export const interviewToDraft = (interview: Interview): InterviewDraft => {
 
 export const prepareDraftForSave = (draft: InterviewDraft): InterviewDraft => {
   const contacts = normalizeContacts(draft);
+  const links = normalizeLinks(draft);
   return {
     ...draft,
     pipeline: mapLegacyPipeline(draft as Partial<Interview>),
     interviewFormat: draft.interviewFormat ?? "Unknown",
     contacts,
+    links,
+    jobDescriptionLink:
+      draft.jobDescriptionLink ??
+      links.find((link) => link.type === "job-description" || link.type === "posting")?.url ??
+      "",
     contactPerson: contacts[0]?.name ?? draft.contactPerson ?? ""
   };
 };

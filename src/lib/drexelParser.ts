@@ -2,6 +2,7 @@ import type {
   InterviewContact,
   InterviewDraft,
   InterviewFormat,
+  InterviewLink,
   PipelineStep
 } from "../types/interview";
 
@@ -21,6 +22,23 @@ const decodePotentialRtf = (content: string) => {
     .replace(/[{}]/g, "")
     .replace(/\\\n/g, "\n")
     .replace(/\\/g, "");
+};
+
+const decodePotentialHtml = (content: string) => {
+  if (!/<(?:a|table|tr|td|br|p|div|span)\b/i.test(content)) return content;
+
+  return content
+    .replace(
+      /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+      (_, href: string, label: string) =>
+        `\n${href}\n${label.replace(/<[^>]+>/g, " ")}\n`
+    )
+    .replace(/<(?:br|\/p|\/div|\/tr|\/li|\/td)>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
 };
 
 const parseHeader = (line: string) => {
@@ -43,6 +61,42 @@ const extractUrls = (text: string) =>
     text.matchAll(/https?:\/\/[^\s")]+/g),
     (match) => match[0].replace(/[>\]]$/, "")
   );
+
+const classifyLink = (url: string, context = ""): InterviewLink["type"] => {
+  const text = `${url} ${context}`.toLowerCase();
+  if (/job|posting|display|i_job_num/.test(text)) return "job-description";
+  if (/interview|schedule|signup|maint/.test(text)) return "interview";
+  if (/employer|company/.test(text)) return "employer";
+  return "other";
+};
+
+const extractLinks = (lines: string[]): InterviewLink[] => {
+  const links: InterviewLink[] = [];
+  const seen = new Set<string>();
+
+  lines.forEach((line, index) => {
+    extractUrls(line).forEach((url) => {
+      const cleanUrl = url.trim();
+      if (seen.has(cleanUrl.toLowerCase())) return;
+      seen.add(cleanUrl.toLowerCase());
+      const nextLine = lines[index + 1] ?? "";
+      const type = classifyLink(cleanUrl, `${line} ${nextLine}`);
+      links.push({
+        id: crypto.randomUUID(),
+        label:
+          type === "job-description"
+            ? "Job description"
+            : type === "interview"
+              ? "Interview request"
+              : clean(nextLine).replace(/[^\w\s./:-]/g, "") || "Imported link",
+        url: cleanUrl,
+        type
+      });
+    });
+  });
+
+  return links;
+};
 
 const detectPipeline = (recordText: string, interviewType: string): PipelineStep => {
   const text = `${recordText} ${interviewType}`.toLowerCase();
@@ -95,7 +149,7 @@ const parseContacts = (lines: string[]): InterviewContact[] => {
 // assumptions narrow: each job begins with a title/id + Employer line, followed by
 // optional Job Length, General Job Location, Interview type, and Interview status.
 export const parseDrexelInterviewText = (content: string): InterviewDraft[] => {
-  const normalizedContent = decodePotentialRtf(content)
+  const normalizedContent = decodePotentialHtml(decodePotentialRtf(content))
     .replace(/\s+¤\s+Employer:\s+/g, " ¤ Employer: ")
     .replace(/Job Length:\s+/g, "Job Length: ")
     .replace(/\s+¤\s+General Job Location:\s+/g, " ¤ General Job Location: ")
@@ -121,6 +175,7 @@ export const parseDrexelInterviewText = (content: string): InterviewDraft[] => {
     for (let lookahead = index + 1; lookahead < lines.length; lookahead += 1) {
       const line = lines[lookahead];
       if (parseHeader(line)) break;
+      if (extractUrls(line).length && parseHeader(lines[lookahead + 1] ?? "")) break;
       recordLines.push(line);
 
       const jobLengthMatch = line.match(/Job Length:\s*(.*?)\s+¤/i);
@@ -135,9 +190,9 @@ export const parseDrexelInterviewText = (content: string): InterviewDraft[] => {
 
     const priorLines = lines.slice(Math.max(0, index - 4), index);
     const recordText = recordLines.join("\n");
-    const links = [...extractUrls(priorLines.join("\n")), ...extractUrls(recordText)];
+    const links = extractLinks([...priorLines, ...recordLines]);
     const jobDescriptionLink =
-      links.find((link) => /job|posting|display|i_job_num/i.test(link)) ?? links[0] ?? "";
+      links.find((link) => link.type === "job-description" || link.type === "posting")?.url ?? "";
     const pipeline = detectPipeline(recordText, interviewType);
 
     results.push({
@@ -147,6 +202,7 @@ export const parseDrexelInterviewText = (content: string): InterviewDraft[] => {
       pipeline,
       locationOrLink,
       jobDescriptionLink,
+      links,
       interviewFormat: detectFormat(recordText),
       roundLabel: "",
       notes: rawStatus

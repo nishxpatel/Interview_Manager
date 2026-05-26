@@ -32,6 +32,13 @@ export interface InterviewContact {
   notes?: string;
 }
 
+export interface InterviewLink {
+  id: string;
+  label: string;
+  url: string;
+  type?: "job-description" | "posting" | "interview" | "employer" | "other";
+}
+
 export interface Interview {
   id: string;
   company: string;
@@ -46,6 +53,7 @@ export interface Interview {
   contacts?: InterviewContact[];
   locationOrLink?: string;
   jobDescriptionLink?: string;
+  links?: InterviewLink[];
   notes?: string;
   questions?: string;
   followUpReminder?: string;

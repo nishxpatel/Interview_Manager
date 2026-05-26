@@ -1,5 +1,5 @@
-import { ChangeEvent, useMemo, useState } from "react";
-import { FileText, Upload, X } from "lucide-react";
+import { ChangeEvent, ClipboardEvent, useMemo, useState } from "react";
+import { ExternalLink, FileText, Upload, X } from "lucide-react";
 import { parseDrexelInterviewText } from "../lib/drexelParser";
 import type { InterviewDraft } from "../types/interview";
 
@@ -14,10 +14,34 @@ export function DrexelImport({ onCancel, onImport }: DrexelImportProps) {
   const [error, setError] = useState("");
   const parsed = useMemo(() => parseDrexelInterviewText(content), [content]);
 
+  const htmlToImportText = (html: string, plainText: string) => {
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    container.querySelectorAll("a[href]").forEach((anchor) => {
+      const href = anchor.getAttribute("href") ?? "";
+      const label = anchor.textContent ?? "";
+      anchor.replaceWith(document.createTextNode(`\n${href}\n${label}\n`));
+    });
+    return container.textContent?.trim() || plainText;
+  };
+
   const handleFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setContent(await file.text());
+  };
+
+  const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const html = event.clipboardData.getData("text/html");
+    const plainText = event.clipboardData.getData("text/plain");
+    if (!html) return;
+
+    event.preventDefault();
+    const importText = htmlToImportText(html, plainText);
+    const field = event.currentTarget;
+    const nextValue =
+      content.slice(0, field.selectionStart) + importText + content.slice(field.selectionEnd);
+    setContent(nextValue);
   };
 
   const handleImport = async () => {
@@ -61,6 +85,7 @@ export function DrexelImport({ onCancel, onImport }: DrexelImportProps) {
           <textarea
             value={content}
             rows={10}
+            onPaste={handlePaste}
             onChange={(event) => setContent(event.target.value)}
             placeholder="Paste the page text here. The parser looks for job title, employer, job length, location, instructions, contacts, links, and interview type."
           />
@@ -83,6 +108,17 @@ export function DrexelImport({ onCancel, onImport }: DrexelImportProps) {
                 <span>
                   <strong>{item.company}</strong>
                   {item.position}
+                  {(item.links ?? []).length ? (
+                    <span className="import-link-list">
+                      {(item.links ?? []).slice(0, 3).map((link) => (
+                        <a href={link.url} target="_blank" rel="noreferrer" key={link.url}>
+                          {link.label || "Imported link"} <ExternalLink size={12} />
+                        </a>
+                      ))}
+                    </span>
+                  ) : (
+                    <small>No links detected</small>
+                  )}
                 </span>
                 <em>{item.pipeline}</em>
               </div>

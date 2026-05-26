@@ -3,11 +3,13 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   setDoc,
+  writeBatch,
   type Unsubscribe
 } from "firebase/firestore";
 import type { Interview, InterviewDraft } from "../types/interview";
@@ -127,4 +129,16 @@ export const deleteInterview = async (uid: string, interviewId: string) => {
   }
 
   await deleteDoc(doc(firestore, "users", uid, "interviews", interviewId));
+};
+
+export const deleteAllInterviews = async (uid: string) => {
+  if (!firestore) {
+    saveLocal(uid, []);
+    return;
+  }
+
+  const snapshot = await getDocs(collection(firestore, "users", uid, "interviews"));
+  const batch = writeBatch(firestore);
+  snapshot.docs.forEach((item) => batch.delete(item.ref));
+  await batch.commit();
 };

@@ -167,11 +167,15 @@ function InterviewCard({
           )}
         </span>
         <span>
-          <strong>Job description</strong>
-          {normalized.jobDescriptionLink ? (
-            <a href={normalized.jobDescriptionLink} target="_blank" rel="noreferrer">
-              View posting <ExternalLink size={13} />
-            </a>
+          <strong>Links</strong>
+          {(normalized.links ?? []).length ? (
+            <span className="link-list">
+              {(normalized.links ?? []).map((link) => (
+                <a href={link.url} target="_blank" rel="noreferrer" key={link.id}>
+                  {link.label || "Link"} <ExternalLink size={13} />
+                </a>
+              ))}
+            </span>
           ) : (
             "No link"
           )}

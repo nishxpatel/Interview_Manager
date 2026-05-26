@@ -7,10 +7,16 @@ import {
   type Interview,
   type InterviewContact,
   type InterviewDraft,
+  type InterviewLink,
   type MissingFieldKey,
   type PipelineStep
 } from "../types/interview";
-import { createBlankContact, interviewToDraft, isScheduledPipeline } from "../lib/interviewUtils";
+import {
+  createBlankContact,
+  createBlankLink,
+  interviewToDraft,
+  isScheduledPipeline
+} from "../lib/interviewUtils";
 
 const blankDraft: InterviewDraft = {
   company: "",
@@ -23,6 +29,7 @@ const blankDraft: InterviewDraft = {
   contacts: [],
   locationOrLink: "",
   jobDescriptionLink: "",
+  links: [],
   notes: "",
   questions: "",
   followUpReminder: "",
@@ -76,6 +83,19 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
     }));
   };
 
+  const updateLink = <K extends keyof InterviewLink>(
+    linkId: string,
+    key: K,
+    value: InterviewLink[K]
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      links: (current.links ?? []).map((link) =>
+        link.id === linkId ? { ...link, [key]: value } : link
+      )
+    }));
+  };
+
   const addContact = () => {
     setDraft((current) => ({
       ...current,
@@ -87,6 +107,20 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
     setDraft((current) => ({
       ...current,
       contacts: (current.contacts ?? []).filter((contact) => contact.id !== contactId)
+    }));
+  };
+
+  const addLink = () => {
+    setDraft((current) => ({
+      ...current,
+      links: [...(current.links ?? []), createBlankLink()]
+    }));
+  };
+
+  const removeLink = (linkId: string) => {
+    setDraft((current) => ({
+      ...current,
+      links: (current.links ?? []).filter((link) => link.id !== linkId)
     }));
   };
 
@@ -223,6 +257,76 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
               placeholder="Paste the Drexel job posting or external job description URL"
             />
           </label>
+          <section className="field wide contacts-editor" aria-label="Imported and related links">
+            <div className="subsection-heading">
+              <div>
+                <span>Related links</span>
+                <p>Preserved Drexel posting, employer, scheduling, or interview links.</p>
+              </div>
+              <button type="button" className="ghost-button compact-button" onClick={addLink}>
+                <Plus size={16} />
+                Add link
+              </button>
+            </div>
+            {(draft.links ?? []).length ? (
+              <div className="contact-form-list">
+                {(draft.links ?? []).map((link, index) => (
+                  <article className="contact-form-card" key={link.id}>
+                    <div className="contact-form-title">
+                      <strong>Link {index + 1}</strong>
+                      <button
+                        type="button"
+                        className="icon-button"
+                        onClick={() => removeLink(link.id)}
+                        aria-label="Remove link"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <div className="contact-grid">
+                      <label className="field">
+                        <span>Label</span>
+                        <input
+                          value={link.label}
+                          onChange={(e) => updateLink(link.id, "label", e.target.value)}
+                        />
+                      </label>
+                      <label className="field">
+                        <span>Type</span>
+                        <select
+                          value={link.type ?? "other"}
+                          onChange={(e) =>
+                            updateLink(
+                              link.id,
+                              "type",
+                              e.target.value as NonNullable<InterviewLink["type"]>
+                            )
+                          }
+                        >
+                          <option value="job-description">Job description</option>
+                          <option value="posting">Posting</option>
+                          <option value="interview">Interview</option>
+                          <option value="employer">Employer</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </label>
+                      <label className="field wide">
+                        <span>URL</span>
+                        <input
+                          value={link.url}
+                          onChange={(e) => updateLink(link.id, "url", e.target.value)}
+                        />
+                      </label>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <button type="button" className="ghost-button compact-button" onClick={addLink}>
+                Add a related link
+              </button>
+            )}
+          </section>
           <section className="field wide contacts-editor" aria-label="Contacts">
             <div className="subsection-heading">
               <div>

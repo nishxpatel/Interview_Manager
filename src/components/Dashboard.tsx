@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { FileUp, Plus, RotateCcw, Search } from "lucide-react";
+import { FileUp, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
 import { AnalyticsPanel } from "./AnalyticsPanel";
 import { DrexelImport } from "./DrexelImport";
 import { InterviewForm } from "./InterviewForm";
 import { InterviewList } from "./InterviewList";
 import {
   createInterview,
+  deleteAllInterviews,
   deleteInterview,
   updateInterview,
   watchInterviews
@@ -66,6 +67,7 @@ export function Dashboard({ user }: DashboardProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [error, setError] = useState("");
+  const [deletingAll, setDeletingAll] = useState(false);
   const [filters, setFilters] = useState<DashboardFilters>(emptyFilters);
 
   useEffect(() => {
@@ -172,6 +174,24 @@ export function Dashboard({ user }: DashboardProps) {
     setIsImportOpen(false);
   };
 
+  const handleDeleteAll = async () => {
+    if (!interviews.length) return;
+    const confirmed = window.confirm(
+      `Delete all ${interviews.length} interview entries for this account? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeletingAll(true);
+    setError("");
+    try {
+      await deleteAllInterviews(user.uid);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Unable to delete interviews.");
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
   const updateFilter = <K extends keyof DashboardFilters>(key: K, value: DashboardFilters[K]) => {
     setFilters((current) => ({ ...current, [key]: value }));
   };
@@ -191,6 +211,14 @@ export function Dashboard({ user }: DashboardProps) {
           <button className="secondary-button" onClick={() => setIsImportOpen(true)}>
             <FileUp size={17} />
             Drexel import
+          </button>
+          <button
+            className="danger-button"
+            onClick={handleDeleteAll}
+            disabled={!interviews.length || deletingAll}
+          >
+            <Trash2 size={17} />
+            {deletingAll ? "Deleting..." : "Delete all entries"}
           </button>
           <button className="primary-button" onClick={openNewForm}>
             <Plus size={17} />

@@ -332,6 +332,20 @@ h1 {
   display: grid;
 }
 
+.import-link-list,
+.link-list {
+  display: grid;
+  gap: 4px;
+}
+
+.import-link-list a,
+.link-list a {
+  align-items: center;
+  color: var(--blue);
+  display: inline-flex;
+  gap: 4px;
+}
+
 .preview-row small {
   color: var(--muted);
 }
