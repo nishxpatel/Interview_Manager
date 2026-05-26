@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "test:sanitize": "node --experimental-strip-types scripts/test-firestore-sanitizer.mjs",
     "test:utils": "node scripts/test-interview-utils.mjs",
+    "test:csv": "node scripts/test-csv-interviews.mjs",
     "test:parser": "node --experimental-strip-types scripts/test-drexel-parser.mjs",
     "deploy": "npm run build"
   },

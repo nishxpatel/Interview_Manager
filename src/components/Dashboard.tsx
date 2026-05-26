@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { FileUp, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { Download, FileUp, Plus, RotateCcw, Search, Trash2, Upload } from "lucide-react";
 import { AnalyticsPanel } from "./AnalyticsPanel";
 import { DrexelImport } from "./DrexelImport";
 import { InterviewForm } from "./InterviewForm";
@@ -22,6 +22,7 @@ import {
   normalizeInterview,
   normalizeContacts
 } from "../lib/interviewUtils";
+import { exportInterviewsToCsv, importInterviewsFromCsv } from "../lib/csvInterviews";
 import type {
   AppUser,
   Interview,
@@ -75,6 +76,7 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
   const [selectedFocus, setSelectedFocus] = useState<MissingFieldKey | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importingCsv, setImportingCsv] = useState(false);
   const [error, setError] = useState("");
   const [deletingAll, setDeletingAll] = useState(false);
   const [migratingLocal, setMigratingLocal] = useState(false);
@@ -183,6 +185,43 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
     setIsImportOpen(false);
   };
 
+  const handleCsvExport = () => {
+    setError("");
+    const csv = exportInterviewsToCsv(interviews);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const date = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `interview-manager-${date}.csv`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCsvImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setImportingCsv(true);
+    setError("");
+    try {
+      const drafts = importInterviewsFromCsv(await file.text());
+      if (!drafts.length) {
+        setError("No interview rows were found in the CSV.");
+        return;
+      }
+      await Promise.all(drafts.map((draft) => createInterview(user.uid, draft)));
+      window.alert(`Imported ${drafts.length} interview entr${drafts.length === 1 ? "y" : "ies"} from CSV.`);
+    } catch (csvError) {
+      setError(csvError instanceof Error ? csvError.message : "Unable to import CSV.");
+    } finally {
+      setImportingCsv(false);
+    }
+  };
+
   const handleDeleteAll = async () => {
     if (!interviews.length) return;
     const confirmed = window.confirm(
@@ -241,6 +280,25 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
             <FileUp size={17} />
             Drexel import
           </button>
+          <button
+            className="ghost-button"
+            onClick={handleCsvExport}
+            disabled={!interviews.length}
+            title="Export interviews using the CSV schema accepted by CSV import."
+          >
+            <Download size={17} />
+            Export CSV
+          </button>
+          <label className={`ghost-button file-action-button${importingCsv ? " is-disabled" : ""}`}>
+            <Upload size={17} />
+            {importingCsv ? "Importing..." : "Import CSV"}
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleCsvImport}
+              disabled={importingCsv}
+            />
+          </label>
           <button
             className="danger-button"
             onClick={handleDeleteAll}

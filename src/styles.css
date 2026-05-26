@@ -171,7 +171,8 @@ a {
 .secondary-button,
 .ghost-button,
 .danger-button,
-.icon-button {
+.icon-button,
+.file-action-button {
   align-items: center;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -211,6 +212,27 @@ a {
   background: var(--surface);
   border-color: var(--line);
   color: var(--ink);
+}
+
+.file-action-button {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+
+.file-action-button input {
+  cursor: pointer;
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+.file-action-button.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .text-button {
@@ -1239,6 +1261,7 @@ textarea:focus {
   .hero-actions .primary-button,
   .secondary-button,
   .dashboard-actions .ghost-button,
+  .dashboard-actions .file-action-button,
   .danger-button {
     width: 100%;
   }
