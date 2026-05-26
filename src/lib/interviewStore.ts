@@ -121,6 +121,9 @@ export const updateInterview = async (
       ...sanitizeObjectForFirestore(preparedDraft),
       stage: deleteField(),
       status: deleteField(),
+      followUpReminder: deleteField(),
+      followUpReminderDate: deleteField(),
+      reminder: deleteField(),
       updatedAt: serverTimestamp()
     },
     { merge: true }

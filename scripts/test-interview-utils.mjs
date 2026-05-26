@@ -29,6 +29,9 @@ try {
     position: "Developer Co-op",
     stage: "Phone screen",
     status: "Date/time finalized",
+    followUpReminder: "2026-06-02",
+    followUpReminderDate: "2026-06-03",
+    reminder: "Thank-you note",
     pipeline: undefined,
     interviewDateTime: "2026-06-01T10:00",
     contacts: [{ id: "contact", name: "A", title: undefined }],
@@ -40,15 +43,31 @@ try {
   assert.equal(normalized.pipeline, "Interview Scheduled");
   assert.equal("stage" in normalized, false);
   assert.equal("status" in normalized, false);
+  assert.equal("followUpReminder" in normalized, false);
+  assert.equal("followUpReminderDate" in normalized, false);
+  assert.equal("reminder" in normalized, false);
 
   const draft = interviewToDraft(normalized);
   assert.equal("stage" in draft, false);
   assert.equal("status" in draft, false);
+  assert.equal("followUpReminder" in draft, false);
+  assert.equal("followUpReminderDate" in draft, false);
+  assert.equal("reminder" in draft, false);
 
-  const saveDraft = prepareDraftForSave({ ...draft, stage: undefined, status: undefined });
+  const saveDraft = prepareDraftForSave({
+    ...draft,
+    stage: undefined,
+    status: undefined,
+    followUpReminder: undefined,
+    followUpReminderDate: undefined,
+    reminder: undefined
+  });
   assert.equal(saveDraft.pipeline, "Interview Scheduled");
   assert.equal("stage" in saveDraft, false);
   assert.equal("status" in saveDraft, false);
+  assert.equal("followUpReminder" in saveDraft, false);
+  assert.equal("followUpReminderDate" in saveDraft, false);
+  assert.equal("reminder" in saveDraft, false);
 } finally {
   await rm(outdir, { recursive: true, force: true });
 }

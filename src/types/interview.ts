@@ -56,7 +56,6 @@ export interface Interview {
   links?: InterviewLink[];
   notes?: string;
   questions?: string;
-  followUpReminder?: string;
   source?: "manual" | "drexel-import";
   drexelJobId?: string;
   jobLength?: string;
@@ -75,8 +74,7 @@ export type MissingFieldKey =
   | "contacts"
   | "locationOrLink"
   | "jobDescriptionLink"
-  | "questions"
-  | "followUpReminder";
+  | "questions";
 
 export interface AppUser {
   uid: string;

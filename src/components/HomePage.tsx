@@ -67,7 +67,7 @@ export function HomePage({
         <article>
           <NotebookPen size={24} />
           <h2>Preparation notes</h2>
-          <p>Keep questions, recruiter responses, follow-up reminders, and thoughts nearby.</p>
+          <p>Keep questions, recruiter responses, and interview thoughts nearby.</p>
         </article>
         <article>
           <FileUp size={24} />

@@ -159,14 +159,6 @@ function InterviewCard({
           )}
         </span>
         <span>
-          <strong>Follow-up</strong>
-          {normalized.followUpReminder || (
-            <button className="missing-inline" onClick={() => onEdit(normalized, "followUpReminder")}>
-              Add reminder
-            </button>
-          )}
-        </span>
-        <span>
           <strong>Links</strong>
           {(normalized.links ?? []).length ? (
             <span className="link-list">

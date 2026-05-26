@@ -11,7 +11,7 @@ GitHub repository: <https://github.com/nishxpatel/Interview_Manager>
 - Google sign-in with Firebase Authentication
 - Per-user interview storage in Cloud Firestore
 - Add, edit, delete, and update interview records
-- Track company, position, pipeline step, date/time, format, contacts, location/link, job description link, questions, notes, and follow-up reminders
+- Track company, position, pipeline step, date/time, format, contacts, location/link, job description link, questions, and notes
 - Pipeline analytics for total, upcoming scheduled interviews, communication-needed records, completed interviews, done/withdrawn records, and active records
 - Drexel import tool for pasted content from "Maintain your Co-Op Interview Requests"
 - Responsive React interface for desktop and mobile
@@ -159,4 +159,4 @@ npm run preview
 
 ## Notes
 
-This is an MVP. A production version can add richer import mapping, calendar export, email reminder integrations, labels, file attachments, and full-text search.
+This is an MVP. A production version can add richer import mapping, calendar export, labels, file attachments, and full-text search.

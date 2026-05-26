@@ -359,7 +359,6 @@ const parseDrexelLines = (richLines: RichLine[]): InterviewDraft[] => {
         roundLabel: "",
         notes: buildNotes(rawStatus, interviewType, locationOrLink),
         questions: "",
-        followUpReminder: "",
         contactPerson: "",
         contacts: parseContacts(bodyTextLines),
         interviewDateTime: "",

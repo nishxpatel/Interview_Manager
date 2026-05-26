@@ -43,10 +43,23 @@ const inferLinkType = (url: string, label = ""): InterviewLink["type"] => {
   return "other";
 };
 
-const withoutLegacyStageStatus = <T extends { stage?: unknown; status?: unknown }>(value: T) => {
+const withoutLegacyFields = <
+  T extends {
+    stage?: unknown;
+    status?: unknown;
+    followUpReminder?: unknown;
+    followUpReminderDate?: unknown;
+    reminder?: unknown;
+  }
+>(
+  value: T
+) => {
   const current = { ...value };
   delete current.stage;
   delete current.status;
+  delete current.followUpReminder;
+  delete current.followUpReminderDate;
+  delete current.reminder;
   return current;
 };
 
@@ -138,7 +151,7 @@ export const normalizeLinks = (interview: Partial<InterviewDraft>): InterviewLin
 export const normalizeInterview = (interview: Interview): Interview => {
   const contacts = normalizeContacts(interview);
   const links = normalizeLinks(interview);
-  const current = withoutLegacyStageStatus(interview);
+  const current = withoutLegacyFields(interview);
   const jobDescriptionLink =
     interview.jobDescriptionLink ??
     links.find((link) => link.type === "job-description" || link.type === "posting")?.url ??
@@ -171,7 +184,6 @@ export const interviewToDraft = (interview: Interview): InterviewDraft => {
     links: normalized.links ?? [],
     notes: normalized.notes ?? "",
     questions: normalized.questions ?? "",
-    followUpReminder: normalized.followUpReminder ?? "",
     source: normalized.source ?? "manual",
     drexelJobId: normalized.drexelJobId ?? "",
     jobLength: normalized.jobLength ?? ""
@@ -181,7 +193,7 @@ export const interviewToDraft = (interview: Interview): InterviewDraft => {
 export const prepareDraftForSave = (draft: InterviewDraft): InterviewDraft => {
   const contacts = normalizeContacts(draft);
   const links = normalizeLinks(draft);
-  const current = withoutLegacyStageStatus(draft);
+  const current = withoutLegacyFields(draft);
   return {
     ...current,
     pipeline: mapLegacyPipeline(draft as Partial<Interview>),
@@ -205,8 +217,7 @@ export const missingFieldLabels: Record<MissingFieldKey, string> = {
   contacts: "contact",
   locationOrLink: "location/link",
   jobDescriptionLink: "job description",
-  questions: "questions",
-  followUpReminder: "follow-up reminder"
+  questions: "questions"
 };
 
 export const getMissingFields = (interview: Interview): MissingFieldKey[] => {

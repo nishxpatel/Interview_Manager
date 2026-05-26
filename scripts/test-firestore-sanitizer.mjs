@@ -6,6 +6,9 @@ const { sanitizeForFirestore } = await import("../src/lib/firestoreSanitizer.ts"
 const sanitized = sanitizeForFirestore({
   stage: undefined,
   status: undefined,
+  followUpReminder: undefined,
+  followUpReminderDate: undefined,
+  reminder: undefined,
   company: "Acme",
   contacts: [
     { id: "1", name: "Recruiter", title: undefined, email: "recruiter@example.com" },

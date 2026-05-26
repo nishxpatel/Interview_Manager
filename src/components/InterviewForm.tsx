@@ -32,7 +32,6 @@ const blankDraft: InterviewDraft = {
   links: [],
   notes: "",
   questions: "",
-  followUpReminder: "",
   source: "manual",
   drexelJobId: "",
   jobLength: ""
@@ -156,7 +155,7 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
         <div className="modal-header">
           <div>
             <h2>{interview ? "Edit interview" : "Add interview"}</h2>
-            <p>Company, role, pipeline, schedule, contacts, notes, and follow-up details.</p>
+            <p>Company, role, pipeline, schedule, contacts, notes, and links.</p>
           </div>
           <button type="button" className="icon-button" onClick={onCancel} aria-label="Close">
             <X size={18} />
@@ -233,15 +232,6 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
               value={draft.locationOrLink}
               onChange={(e) => update("locationOrLink", e.target.value)}
               placeholder="Address, office, Zoom, Teams, phone number"
-            />
-          </label>
-          <label className="field">
-            <span>Follow-up reminder</span>
-            <input
-              data-focus="followUpReminder"
-              type="date"
-              value={draft.followUpReminder}
-              onChange={(e) => update("followUpReminder", e.target.value)}
             />
           </label>
           <label className="field">
