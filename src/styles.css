@@ -417,7 +417,7 @@ h1 {
 
 .feature-grid article,
 .stat-card,
-.stage-card,
+.pipeline-card,
 .table-section,
 .interview-card,
 .empty-state {
@@ -466,7 +466,7 @@ h1 {
   line-height: 1;
 }
 
-.stage-card {
+.pipeline-card {
   grid-column: 1 / -1;
   padding: 20px;
 }
@@ -489,7 +489,7 @@ h1 {
   margin-bottom: 2px;
 }
 
-.status-bars {
+.pipeline-bars {
   display: grid;
   gap: 10px;
 }
@@ -604,7 +604,7 @@ h1 {
 }
 
 .field span,
-.status-select span {
+.pipeline-select span {
   color: var(--chip-text);
   font-size: 0.82rem;
   font-weight: 700;
@@ -692,7 +692,7 @@ textarea:focus {
   padding: 5px 9px;
 }
 
-.status-select {
+.pipeline-select {
   display: grid;
   gap: 7px;
 }

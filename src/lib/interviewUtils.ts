@@ -43,6 +43,13 @@ const inferLinkType = (url: string, label = ""): InterviewLink["type"] => {
   return "other";
 };
 
+const withoutLegacyStageStatus = <T extends { stage?: unknown; status?: unknown }>(value: T) => {
+  const current = { ...value };
+  delete current.stage;
+  delete current.status;
+  return current;
+};
+
 export const isScheduledPipeline = (pipeline?: string) =>
   SCHEDULED_PIPELINE_STEPS.includes(pipeline as PipelineStep);
 
@@ -131,12 +138,13 @@ export const normalizeLinks = (interview: Partial<InterviewDraft>): InterviewLin
 export const normalizeInterview = (interview: Interview): Interview => {
   const contacts = normalizeContacts(interview);
   const links = normalizeLinks(interview);
+  const current = withoutLegacyStageStatus(interview);
   const jobDescriptionLink =
     interview.jobDescriptionLink ??
     links.find((link) => link.type === "job-description" || link.type === "posting")?.url ??
     "";
   return {
-    ...interview,
+    ...current,
     pipeline: mapLegacyPipeline(interview),
     interviewFormat: interview.interviewFormat ?? "Unknown",
     roundLabel: interview.roundLabel ?? "",
@@ -153,8 +161,6 @@ export const interviewToDraft = (interview: Interview): InterviewDraft => {
     company: normalized.company,
     position: normalized.position,
     pipeline: normalized.pipeline,
-    stage: normalized.stage,
-    status: normalized.status,
     interviewDateTime: normalized.interviewDateTime ?? "",
     interviewFormat: normalized.interviewFormat ?? "Unknown",
     roundLabel: normalized.roundLabel ?? "",
@@ -175,8 +181,9 @@ export const interviewToDraft = (interview: Interview): InterviewDraft => {
 export const prepareDraftForSave = (draft: InterviewDraft): InterviewDraft => {
   const contacts = normalizeContacts(draft);
   const links = normalizeLinks(draft);
+  const current = withoutLegacyStageStatus(draft);
   return {
-    ...draft,
+    ...current,
     pipeline: mapLegacyPipeline(draft as Partial<Interview>),
     interviewFormat: draft.interviewFormat ?? "Unknown",
     contacts,

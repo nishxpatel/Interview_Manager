@@ -51,14 +51,14 @@ export function AnalyticsPanel({ interviews }: AnalyticsPanelProps) {
         <strong>{analytics.done}</strong>
       </article>
 
-      <article className="stage-card">
+      <article className="pipeline-card">
         <div className="section-heading tight">
           <div>
             <h2>Interviews by pipeline</h2>
             <p>{analytics.active} active records</p>
           </div>
         </div>
-        <div className="status-bars">
+        <div className="pipeline-bars">
           {Object.entries(analytics.byPipeline).length ? (
             Object.entries(analytics.byPipeline).map(([pipeline, count]) => (
               <div className="bar-row" key={pipeline}>
@@ -75,7 +75,7 @@ export function AnalyticsPanel({ interviews }: AnalyticsPanelProps) {
         </div>
       </article>
 
-      <article className="stage-card">
+      <article className="pipeline-card">
         <div className="section-heading tight">
           <div>
             <h2>Scheduled interviews</h2>

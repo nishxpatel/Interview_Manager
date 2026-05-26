@@ -96,7 +96,7 @@ function InterviewCard({
           </div>
           {countdown ? <p className="countdown-pill">{countdown}</p> : null}
         </div>
-        <label className="status-select">
+        <label className="pipeline-select">
           <span>Pipeline</span>
           <select
             value={normalized.pipeline}

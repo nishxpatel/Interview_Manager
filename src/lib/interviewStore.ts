@@ -2,6 +2,7 @@ import {
   addDoc,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDocs,
   onSnapshot,
@@ -14,6 +15,7 @@ import {
 } from "firebase/firestore";
 import type { Interview, InterviewDraft } from "../types/interview";
 import { firestore } from "./firebase";
+import { sanitizeObjectForFirestore } from "./firestoreSanitizer";
 import { normalizeInterview, prepareDraftForSave } from "./interviewUtils";
 
 const localKey = (uid: string) => `interview-manager:${uid}:interviews`;
@@ -73,10 +75,11 @@ const saveLocal = (uid: string, interviews: Interview[]) => {
 };
 
 export const createInterview = async (uid: string, draft: InterviewDraft) => {
+  const preparedDraft = prepareDraftForSave(draft);
   if (!firestore) {
     const current = fromStored(window.localStorage.getItem(localKey(uid)));
     const interview: Interview = {
-      ...prepareDraftForSave(draft),
+      ...preparedDraft,
       id: crypto.randomUUID(),
       createdAt: now(),
       updatedAt: now()
@@ -86,7 +89,7 @@ export const createInterview = async (uid: string, draft: InterviewDraft) => {
   }
 
   const docRef = await addDoc(collection(firestore, "users", uid, "interviews"), {
-    ...prepareDraftForSave(draft),
+    ...sanitizeObjectForFirestore(preparedDraft),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
@@ -98,13 +101,14 @@ export const updateInterview = async (
   interviewId: string,
   draft: InterviewDraft
 ) => {
+  const preparedDraft = prepareDraftForSave(draft);
   if (!firestore) {
     const current = fromStored(window.localStorage.getItem(localKey(uid)));
     saveLocal(
       uid,
       current.map((item) =>
         item.id === interviewId
-          ? normalizeInterview({ ...item, ...prepareDraftForSave(draft), updatedAt: now() })
+          ? normalizeInterview({ ...item, ...preparedDraft, updatedAt: now() })
           : item
       )
     );
@@ -113,7 +117,12 @@ export const updateInterview = async (
 
   await setDoc(
     doc(firestore, "users", uid, "interviews", interviewId),
-    { ...prepareDraftForSave(draft), updatedAt: serverTimestamp() },
+    {
+      ...sanitizeObjectForFirestore(preparedDraft),
+      stage: deleteField(),
+      status: deleteField(),
+      updatedAt: serverTimestamp()
+    },
     { merge: true }
   );
 };
