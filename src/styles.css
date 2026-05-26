@@ -1115,6 +1115,19 @@ textarea:focus {
   padding: 11px 13px;
 }
 
+.auth-status {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.auth-status a {
+  color: var(--blue);
+  font-weight: 800;
+}
+
 .action-notice {
   align-items: center;
   display: flex;

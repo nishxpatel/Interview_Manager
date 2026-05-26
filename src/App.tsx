@@ -41,6 +41,7 @@ const redirectIntentKey = "interview-manager:auth-redirect";
 
 type ThemePreference = "light" | "dark";
 type AppView = "home" | "dashboard";
+type AuthPhase = "idle" | "popup" | "redirect";
 
 const getInitialTheme = (): ThemePreference => {
   const stored = window.localStorage.getItem("interview-manager:theme");
@@ -48,7 +49,31 @@ const getInitialTheme = (): ThemePreference => {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 };
 
-const prefersRedirectSignIn = () => {
+const hasRedirectIntent = () => {
+  try {
+    return window.sessionStorage.getItem(redirectIntentKey) === "true";
+  } catch {
+    return false;
+  }
+};
+
+const setRedirectIntent = () => {
+  try {
+    window.sessionStorage.setItem(redirectIntentKey, "true");
+  } catch {
+    // Redirect sign-in can still proceed; this flag only improves return-state messaging.
+  }
+};
+
+const clearRedirectIntent = () => {
+  try {
+    window.sessionStorage.removeItem(redirectIntentKey);
+  } catch {
+    // Ignore unavailable session storage.
+  }
+};
+
+const getAuthEnvironment = () => {
   const userAgent = window.navigator.userAgent;
   const isIOS = /iPad|iPhone|iPod/.test(userAgent);
   const isSafari = /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(userAgent);
@@ -56,6 +81,11 @@ const prefersRedirectSignIn = () => {
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||
     Boolean(navigatorWithStandalone.standalone);
+  return { isIOS, isSafari, isStandalone };
+};
+
+const prefersRedirectSignIn = () => {
+  const { isIOS, isSafari, isStandalone } = getAuthEnvironment();
   return isIOS || isSafari || isStandalone;
 };
 
@@ -74,10 +104,17 @@ function App() {
       ? demoUser
       : null;
   });
-  const [authLoading, setAuthLoading] = useState(hasFirebaseConfig);
+  const [authPhase, setAuthPhase] = useState<AuthPhase>("idle");
+  const [authMessage, setAuthMessage] = useState(
+    hasFirebaseConfig && hasRedirectIntent()
+      ? "Finishing Google sign-in..."
+      : ""
+  );
   const [authError, setAuthError] = useState("");
   const [theme, setTheme] = useState<ThemePreference>(getInitialTheme);
   const [view, setView] = useState<AppView>("home");
+  const openInSafariUrl = `${window.location.origin}${import.meta.env.BASE_URL}`;
+  const authLoading = authPhase !== "idle";
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -101,11 +138,12 @@ function App() {
             }
           : null
       );
-      if (currentUser && window.sessionStorage.getItem(redirectIntentKey)) {
-        window.sessionStorage.removeItem(redirectIntentKey);
+      if (currentUser && hasRedirectIntent()) {
+        clearRedirectIntent();
+        setAuthMessage("");
         setView("dashboard");
       }
-      setAuthLoading(false);
+      setAuthPhase((current) => (current === "redirect" && !currentUser ? current : "idle"));
     });
   }, []);
 
@@ -115,15 +153,20 @@ function App() {
     getRedirectResult(firebaseAuth)
       .then((result) => {
         if (result?.user) {
-          window.sessionStorage.removeItem(redirectIntentKey);
+          clearRedirectIntent();
+          setAuthMessage("");
           setView("dashboard");
+        } else if (hasRedirectIntent()) {
+          clearRedirectIntent();
+          setAuthMessage("");
         }
       })
       .catch((error) => {
-        window.sessionStorage.removeItem(redirectIntentKey);
+        clearRedirectIntent();
+        setAuthPhase("idle");
         setAuthError(error instanceof Error ? error.message : "Unable to finish Google sign-in.");
       })
-      .finally(() => setAuthLoading(false));
+      .finally(() => setAuthPhase((current) => (current === "redirect" ? current : "idle")));
   }, []);
 
   useEffect(() => {
@@ -144,6 +187,14 @@ function App() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const { isIOS, isSafari, isStandalone } = getAuthEnvironment();
+    console.info(
+      `[Interview Manager] Auth environment: iOS=${isIOS}, Safari=${isSafari}, standalone=${isStandalone}`
+    );
+  }, []);
+
   const authModeLabel = useMemo(() => {
     if (user?.isDemo) return "Local demo mode";
     if (user && hasFirebaseConfig) return "Cloud sync active";
@@ -153,6 +204,8 @@ function App() {
 
   const handleSignIn = async () => {
     setAuthError("");
+    setAuthMessage("");
+    if (import.meta.env.DEV) console.info("[Interview Manager] Sign-in button clicked.");
     if (!firebaseAuth) {
       window.localStorage.setItem("interview-manager:demo-user", "true");
       setUser(demoUser);
@@ -161,28 +214,48 @@ function App() {
     }
     const auth = firebaseAuth;
 
-    const redirectSignIn = async () => {
-      window.sessionStorage.setItem(redirectIntentKey, "true");
-      try {
-        await signInWithRedirect(auth, googleProvider);
-      } catch (error) {
-        window.sessionStorage.removeItem(redirectIntentKey);
+    const redirectSignIn = () => {
+      const { isStandalone } = getAuthEnvironment();
+      setRedirectIntent();
+      setAuthPhase("redirect");
+      setAuthMessage("Redirecting to Google sign-in...");
+
+      const fallbackTimer = window.setTimeout(() => {
+        setAuthPhase("idle");
+        setAuthMessage(
+          isStandalone
+            ? "Google sign-in did not open from the home-screen app. Open Interview Manager in Safari to sign in, then return to the home-screen app."
+            : "Google sign-in did not open. Try again, or open Interview Manager directly in Safari."
+        );
+      }, 4000);
+
+      void signInWithRedirect(auth, googleProvider).catch((error) => {
+        window.clearTimeout(fallbackTimer);
+        clearRedirectIntent();
+        setAuthPhase("idle");
+        setAuthMessage("");
         setAuthError(error instanceof Error ? error.message : "Unable to start Google sign-in.");
-      }
+      });
     };
 
     try {
       if (prefersRedirectSignIn()) {
-        await redirectSignIn();
+        redirectSignIn();
         return;
       }
+      setAuthPhase("popup");
+      setAuthMessage("Opening Google sign-in...");
       await signInWithPopup(auth, googleProvider);
+      setAuthMessage("");
+      setAuthPhase("idle");
       setView("dashboard");
     } catch (error) {
       if (shouldFallbackToRedirect(error)) {
-        await redirectSignIn();
+        redirectSignIn();
         return;
       }
+      setAuthPhase("idle");
+      setAuthMessage("");
       setAuthError(error instanceof Error ? error.message : "Unable to sign in.");
     }
   };
@@ -247,13 +320,29 @@ function App() {
           ) : (
             <button className="primary-button" onClick={handleSignIn} disabled={authLoading}>
               <LogIn size={17} />
-              {hasFirebaseConfig ? "Sign in with Google" : "Continue locally"}
+              {authPhase === "redirect"
+                ? "Redirecting..."
+                : authPhase === "popup"
+                  ? "Signing in..."
+                  : hasFirebaseConfig
+                    ? "Sign in with Google"
+                    : "Continue locally"}
             </button>
           )}
         </nav>
       </header>
 
       {authError ? <p className="app-error">{authError}</p> : null}
+      {authMessage ? (
+        <p className="sync-notice auth-status">
+          {authMessage}
+          {authMessage.includes("Open Interview Manager in Safari") ? (
+            <a href={openInSafariUrl} target="_blank" rel="noreferrer">
+              Open in Safari
+            </a>
+          ) : null}
+        </p>
+      ) : null}
 
       {user && view === "dashboard" ? (
         <Dashboard user={user} hasFirebaseConfig={hasFirebaseConfig} />
@@ -263,7 +352,15 @@ function App() {
           hasFirebaseConfig={hasFirebaseConfig}
           onPrimaryAction={user ? () => setView("dashboard") : handleSignIn}
           primaryActionLabel={
-            user ? "Open dashboard" : hasFirebaseConfig ? "Sign in with Google" : "Open local demo"
+            user
+              ? "Open dashboard"
+              : authPhase === "redirect"
+                ? "Redirecting..."
+                : authPhase === "popup"
+                  ? "Signing in..."
+                  : hasFirebaseConfig
+                    ? "Sign in with Google"
+                    : "Open local demo"
           }
           featureIcons={[LayoutDashboard, CalendarClock, FileUp, ShieldCheck, Plus]}
         />
