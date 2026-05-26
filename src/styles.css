@@ -322,6 +322,11 @@ h1 {
   padding: 13px 0;
 }
 
+.preview-import-row {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
 .preview-row:last-child,
 .preview-import-row:last-child {
   border-bottom: 0;
@@ -330,6 +335,47 @@ h1 {
 .preview-row span,
 .preview-import-row span {
   display: grid;
+}
+
+.preview-import-body {
+  display: grid;
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+}
+
+.preview-import-title {
+  display: grid;
+  gap: 2px;
+}
+
+.preview-import-meta {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.preview-import-meta div {
+  display: grid;
+  gap: 2px;
+}
+
+.preview-import-meta dt {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.preview-import-meta dd {
+  margin: 0;
+}
+
+.preview-missing-fields {
+  color: var(--danger);
+  font-size: 0.86rem;
+  font-weight: 700;
 }
 
 .import-link-list,
@@ -951,7 +997,8 @@ textarea:focus {
   .analytics-grid,
   .form-grid,
   .filter-panel,
-  .contact-grid {
+  .contact-grid,
+  .preview-import-meta {
     grid-template-columns: 1fr;
   }
 
