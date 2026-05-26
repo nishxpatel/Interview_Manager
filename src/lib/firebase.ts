@@ -37,3 +37,4 @@ if (hasFirebaseConfig) {
 export const firebaseAuth = auth;
 export const firestore = db;
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });

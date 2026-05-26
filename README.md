@@ -15,6 +15,7 @@ GitHub repository: <https://github.com/nishxpatel/Interview_Manager>
 - Pipeline analytics for total, upcoming scheduled interviews, communication-needed records, completed interviews, done/withdrawn records, and active records
 - Drexel import tool for pasted content from "Maintain your Co-Op Interview Requests"
 - Responsive React interface for desktop and mobile
+- Lightweight PWA metadata for Chromium install prompts and iPhone Safari "Add to Home Screen"
 - GitHub Pages deployment workflow
 
 ## Backend Choice
@@ -117,11 +118,12 @@ The current parser extracts:
 - Job length
 - General job location
 - Interview type
-- Drexel interview status as an import note
 - Student/employer contact instructions when present
 - Job description/posting links when present
 
-Dates, contacts, recruiter emails, and meeting links may not appear in the copied Drexel page text, so imported records stay editable. Date/time is only required once the record is in a scheduled pipeline step.
+Imported records do not auto-fill the user notes field. Dates, contacts, recruiter emails, and meeting links may not appear in the copied Drexel page text, so imported records stay editable. Date/time is only required once the record is in a scheduled pipeline step.
+
+Browsers differ in what they expose during paste. Chromium desktop browsers usually provide rich HTML clipboard data, which allows embedded Drexel links to be preserved. Safari and iPhone home-screen mode may only provide plain text, so the app keeps parsing records and shows a notice when embedded links are not available from the clipboard.
 
 The parser lives in `src/lib/drexelParser.ts` and is intentionally isolated so it can be adjusted when more Drexel examples are available.
 
@@ -156,6 +158,10 @@ npm run dev
 npm run build
 npm run preview
 ```
+
+## Mobile Install Notes
+
+The app includes `public/manifest.webmanifest`, PWA icons, Apple touch icons, and iOS web app meta tags. On iPhone, open the live site in Safari and use Share -> Add to Home Screen. The app intentionally does not register a service worker yet so Firebase Auth and Firestore always use the network directly and do not risk stale cached sync behavior.
 
 ## Notes
 

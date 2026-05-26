@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
+import {
+  getRedirectResult,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithRedirect,
+  signOut
+} from "firebase/auth";
 import {
   BriefcaseBusiness,
   CalendarClock,
@@ -31,6 +37,8 @@ const demoUser: AppUser = {
   isDemo: true
 };
 
+const redirectIntentKey = "interview-manager:auth-redirect";
+
 type ThemePreference = "light" | "dark";
 type AppView = "home" | "dashboard";
 
@@ -38,6 +46,26 @@ const getInitialTheme = (): ThemePreference => {
   const stored = window.localStorage.getItem("interview-manager:theme");
   if (stored === "light" || stored === "dark") return stored;
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+};
+
+const prefersRedirectSignIn = () => {
+  const userAgent = window.navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+  const isSafari = /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(userAgent);
+  const navigatorWithStandalone = window.navigator as Navigator & { standalone?: boolean };
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    Boolean(navigatorWithStandalone.standalone);
+  return isIOS || isSafari || isStandalone;
+};
+
+const shouldFallbackToRedirect = (error: unknown) => {
+  const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+  return [
+    "auth/cancelled-popup-request",
+    "auth/operation-not-supported-in-this-environment",
+    "auth/popup-blocked"
+  ].includes(code);
 };
 
 function App() {
@@ -54,6 +82,10 @@ function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("interview-manager:theme", theme);
+    const themeColor = theme === "dark" ? "#111713" : "#f6f7f2";
+    document
+      .querySelector('meta[name="theme-color"]:not([media])')
+      ?.setAttribute("content", themeColor);
   }, [theme]);
 
   useEffect(() => {
@@ -69,8 +101,29 @@ function App() {
             }
           : null
       );
+      if (currentUser && window.sessionStorage.getItem(redirectIntentKey)) {
+        window.sessionStorage.removeItem(redirectIntentKey);
+        setView("dashboard");
+      }
       setAuthLoading(false);
     });
+  }, []);
+
+  useEffect(() => {
+    if (!firebaseAuth) return;
+
+    getRedirectResult(firebaseAuth)
+      .then((result) => {
+        if (result?.user) {
+          window.sessionStorage.removeItem(redirectIntentKey);
+          setView("dashboard");
+        }
+      })
+      .catch((error) => {
+        window.sessionStorage.removeItem(redirectIntentKey);
+        setAuthError(error instanceof Error ? error.message : "Unable to finish Google sign-in.");
+      })
+      .finally(() => setAuthLoading(false));
   }, []);
 
   useEffect(() => {
@@ -106,11 +159,30 @@ function App() {
       setView("dashboard");
       return;
     }
+    const auth = firebaseAuth;
+
+    const redirectSignIn = async () => {
+      window.sessionStorage.setItem(redirectIntentKey, "true");
+      try {
+        await signInWithRedirect(auth, googleProvider);
+      } catch (error) {
+        window.sessionStorage.removeItem(redirectIntentKey);
+        setAuthError(error instanceof Error ? error.message : "Unable to start Google sign-in.");
+      }
+    };
 
     try {
-      await signInWithPopup(firebaseAuth, googleProvider);
+      if (prefersRedirectSignIn()) {
+        await redirectSignIn();
+        return;
+      }
+      await signInWithPopup(auth, googleProvider);
       setView("dashboard");
     } catch (error) {
+      if (shouldFallbackToRedirect(error)) {
+        await redirectSignIn();
+        return;
+      }
       setAuthError(error instanceof Error ? error.message : "Unable to sign in.");
     }
   };

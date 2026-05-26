@@ -12,6 +12,7 @@ interface DrexelImportProps {
 export function DrexelImport({ onCancel, onImport }: DrexelImportProps) {
   const [content, setContent] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
+  const [pasteNotice, setPasteNotice] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const parsed = useMemo(
@@ -45,12 +46,21 @@ export function DrexelImport({ onCancel, onImport }: DrexelImportProps) {
     if (!file) return;
     setContent(await file.text());
     setHtmlContent("");
+    setPasteNotice("Imported files are parsed as text. Links are preserved only when the file includes HTML or RTF link data.");
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
     const html = event.clipboardData.getData("text/html");
     const plainText = event.clipboardData.getData("text/plain");
-    if (!html) return;
+    if (!html) {
+      setHtmlContent("");
+      setPasteNotice(
+        plainText
+          ? "Pasted plain text. Embedded Drexel links may not be available from this browser, but the records can still be imported and edited."
+          : "Paste did not include readable text. Try copying from the Drexel page again or upload a saved text/RTF/HTML file."
+      );
+      return;
+    }
 
     event.preventDefault();
     const importText = htmlToPlainText(html, plainText);
@@ -59,6 +69,7 @@ export function DrexelImport({ onCancel, onImport }: DrexelImportProps) {
       content.slice(0, field.selectionStart) + importText + content.slice(field.selectionEnd);
     setContent(nextValue);
     setHtmlContent((currentHtml) => (currentHtml ? `${currentHtml}\n${html}` : html));
+    setPasteNotice("Rich paste detected. Embedded Drexel links will be preserved when they are included by the browser.");
   };
 
   const handleImport = async () => {
@@ -106,10 +117,12 @@ export function DrexelImport({ onCancel, onImport }: DrexelImportProps) {
             onChange={(event) => {
               setContent(event.target.value);
               setHtmlContent("");
+              setPasteNotice("");
             }}
             placeholder="Paste the page text here. The parser looks for job title, employer, job length, location, instructions, contacts, links, and interview type."
           />
         </label>
+        {pasteNotice ? <p className="notice compact-notice">{pasteNotice}</p> : null}
 
         <div className="import-preview">
           <div className="section-heading tight">
