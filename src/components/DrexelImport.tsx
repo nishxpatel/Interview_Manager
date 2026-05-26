@@ -142,6 +142,10 @@ export function DrexelImport({ onCancel, onImport }: DrexelImportProps) {
                         <dd>{item.pipeline}</dd>
                       </div>
                       <div>
+                        <dt>Format</dt>
+                        <dd>{item.interviewFormat ?? "Not set"}</dd>
+                      </div>
+                      <div>
                         <dt>Contacts</dt>
                         <dd>
                           {item.contacts?.length

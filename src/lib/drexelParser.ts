@@ -218,11 +218,14 @@ const detectPipeline = (recordText: string, interviewType: string): PipelineStep
 
 const detectFormat = (recordText: string): InterviewFormat => {
   const text = recordText.toLowerCase();
-  if (/hybrid/.test(text)) return "Hybrid";
-  if (/zoom|teams|webex|virtual|online|video/.test(text)) return "Virtual";
+  if (/teams|microsoft\s+teams/.test(text)) return "Teams";
+  if (/zoom/.test(text)) return "Zoom";
   if (/phone|call/.test(text)) return "Phone";
-  if (/in[-\s]?person|on[-\s]?site|office|campus/.test(text)) return "In-person";
-  return "Unknown";
+  if (/employer site|in[-\s]?person|on[-\s]?site|office|campus|physical|address/.test(text)) {
+    return "On-Site";
+  }
+  if (/webex|virtual|online|video|hybrid/.test(text)) return "Other";
+  return "Not set";
 };
 
 const parseContacts = (lines: string[]): InterviewContact[] => {
@@ -313,16 +316,6 @@ const buildLinks = (headerLine: RichLine, blockLines: RichLine[], header: Drexel
   return links;
 };
 
-const buildNotes = (rawStatus: string, interviewType: string, locationOrLink: string) => {
-  const details = [
-    rawStatus ? `Drexel interview status: ${rawStatus}` : "",
-    interviewType ? `Drexel interview type: ${interviewType}` : "",
-    locationOrLink ? `Drexel location: ${locationOrLink}` : ""
-  ].filter(Boolean);
-
-  return details.length ? `Imported from Drexel. ${details.join(". ")}.` : "Imported from Drexel.";
-};
-
 const parseDrexelLines = (richLines: RichLine[]): InterviewDraft[] => {
   const coalesced = coalesceDrexelLines(richLines);
   const headerIndexes: number[] = [];
@@ -342,9 +335,14 @@ const parseDrexelLines = (richLines: RichLine[]): InterviewDraft[] => {
     const interviewType = findLabelValue(bodyTextLines, "Interview");
     const jobLength = findLabelValue(bodyTextLines, "Job Length");
     const locationOrLink = findLabelValue(bodyTextLines, "General Job Location");
-    const rawStatus = findLabelValue(bodyTextLines, "Interview status");
     const links = buildLinks(coalesced[start], blockLines, header);
     const jobDescriptionLink = links.find((link) => link.type === "job-description" || link.type === "posting")?.url ?? "";
+    const formatSource = [
+      recordText,
+      interviewType,
+      locationOrLink,
+      links.map((link) => `${link.label} ${link.url}`).join("\n")
+    ].join("\n");
 
     return [
       {
@@ -355,9 +353,9 @@ const parseDrexelLines = (richLines: RichLine[]): InterviewDraft[] => {
         locationOrLink,
         jobDescriptionLink,
         links,
-        interviewFormat: detectFormat(recordText),
+        interviewFormat: detectFormat(formatSource),
         roundLabel: "",
-        notes: buildNotes(rawStatus, interviewType, locationOrLink),
+        notes: "",
         questions: "",
         contactPerson: "",
         contacts: parseContacts(bodyTextLines),

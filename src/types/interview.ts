@@ -4,8 +4,6 @@ export const PIPELINE_STEPS = [
   "Waiting for Employer Response",
   "Scheduling in Progress",
   "Interview Scheduled",
-  "Screening Round Scheduled",
-  "Additional Interview Round Scheduled",
   "Interview Completed",
   "Follow-Up Sent / Done",
   "Withdrawn"
@@ -13,13 +11,9 @@ export const PIPELINE_STEPS = [
 
 export type PipelineStep = (typeof PIPELINE_STEPS)[number];
 
-export const SCHEDULED_PIPELINE_STEPS: PipelineStep[] = [
-  "Interview Scheduled",
-  "Screening Round Scheduled",
-  "Additional Interview Round Scheduled"
-];
+export const SCHEDULED_PIPELINE_STEPS: PipelineStep[] = ["Interview Scheduled"];
 
-export const INTERVIEW_FORMATS = ["Unknown", "Virtual", "Phone", "In-person", "Hybrid"] as const;
+export const INTERVIEW_FORMATS = ["Not set", "Teams", "Zoom", "Phone", "On-Site", "Other"] as const;
 
 export type InterviewFormat = (typeof INTERVIEW_FORMATS)[number];
 

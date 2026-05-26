@@ -665,7 +665,7 @@ textarea:focus {
   align-items: start;
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.28fr);
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.42fr);
 }
 
 .interview-main h3 {
@@ -707,6 +707,15 @@ textarea:focus {
 .pipeline-select {
   display: grid;
   gap: 7px;
+  justify-self: end;
+  max-width: 420px;
+  width: 100%;
+}
+
+.pipeline-select select {
+  font-weight: 700;
+  min-width: 0;
+  width: 100%;
 }
 
 .missing-fields {
@@ -1082,6 +1091,11 @@ textarea:focus {
 
   .hero-panel {
     min-width: 0;
+  }
+
+  .pipeline-select {
+    justify-self: stretch;
+    max-width: none;
   }
 
   .feature-grid,

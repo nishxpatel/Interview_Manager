@@ -63,6 +63,10 @@ assert.equal(htmlRecords[0].company, "Acme Analytics");
 assert.equal(htmlRecords[1].company, "BuildCo");
 assert.equal(htmlRecords[0].pipeline, "Student Needs to Contact Employer");
 assert.equal(htmlRecords[1].pipeline, "Waiting for Employer to Contact Student");
+assert.equal(htmlRecords[0].interviewFormat, "On-Site");
+assert.equal(htmlRecords[1].interviewFormat, "Not set");
+assert.equal(htmlRecords[0].notes, "");
+assert.equal(htmlRecords[1].notes, "");
 assert.equal(htmlRecords[0].links?.length, 1);
 assert.equal(htmlRecords[1].links?.length, 1);
 assert.match(htmlRecords[0].jobDescriptionLink ?? "", /i_job_num=111111/);
@@ -77,6 +81,7 @@ assert.equal(plainRecords[0].position, "Data Analyst Co-op");
 assert.equal(plainRecords[1].position, "Software Engineering Co-op");
 assert.equal(plainRecords[0].links?.length, 0);
 assert.equal(plainRecords[1].links?.length, 0);
+assert.equal(plainRecords[0].notes, "");
 
 if (existsSync(samplePath)) {
   const sampleRecords = parseDrexelInterviewText(readFileSync(samplePath, "utf8"));

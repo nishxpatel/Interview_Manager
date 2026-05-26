@@ -23,7 +23,7 @@ const blankDraft: InterviewDraft = {
   position: "",
   pipeline: "Student Needs to Contact Employer",
   interviewDateTime: "",
-  interviewFormat: "Unknown",
+  interviewFormat: "Not set",
   roundLabel: "",
   contactPerson: "",
   contacts: [],
@@ -197,7 +197,7 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
             <span>Interview format</span>
             <select
               data-focus="interviewFormat"
-              value={draft.interviewFormat ?? "Unknown"}
+              value={draft.interviewFormat ?? "Not set"}
               onChange={(e) => update("interviewFormat", e.target.value as InterviewDraft["interviewFormat"])}
             >
               {INTERVIEW_FORMATS.map((format) => (

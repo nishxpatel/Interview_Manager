@@ -1,8 +1,11 @@
 import {
+  INTERVIEW_FORMATS,
+  PIPELINE_STEPS,
   SCHEDULED_PIPELINE_STEPS,
   type Interview,
   type InterviewContact,
   type InterviewDraft,
+  type InterviewFormat,
   type InterviewLink,
   type MissingFieldKey,
   type PipelineStep
@@ -63,6 +66,20 @@ const withoutLegacyFields = <
   return current;
 };
 
+const normalizeNotes = (notes?: string, source?: Interview["source"]) => {
+  const value = notes ?? "";
+  const trimmed = value.trim();
+  if (
+    source === "drexel-import" &&
+    (/^Imported from Drexel\.?$/i.test(trimmed) ||
+      (/^Imported from Drexel(?:\.|$)/i.test(trimmed) &&
+        /Drexel interview (?:status|type)|Drexel location/i.test(trimmed)))
+  ) {
+    return "";
+  }
+  return value;
+};
+
 export const isScheduledPipeline = (pipeline?: string) =>
   SCHEDULED_PIPELINE_STEPS.includes(pipeline as PipelineStep);
 
@@ -74,12 +91,42 @@ export const isCommunicationNeededPipeline = (pipeline?: string) =>
   pipeline === "Waiting for Employer to Contact Student" ||
   pipeline === "Waiting for Employer Response";
 
-export const mapLegacyPipeline = (record: Partial<Interview>): PipelineStep => {
-  if (record.pipeline) return record.pipeline;
+export const isContactRequiredPipeline = (pipeline?: string) =>
+  pipeline === "Student Needs to Contact Employer" || pipeline === "Waiting for Employer Response";
 
+const isPipelineStep = (value?: string): value is PipelineStep =>
+  PIPELINE_STEPS.includes(value as PipelineStep);
+
+export const normalizeInterviewFormat = (value?: string | null): InterviewFormat => {
+  if (!value) return "Not set";
+  if (INTERVIEW_FORMATS.includes(value as InterviewFormat)) return value as InterviewFormat;
+
+  const format = value.toLowerCase();
+  if (format.includes("teams")) return "Teams";
+  if (format.includes("zoom")) return "Zoom";
+  if (format.includes("phone") || format.includes("call")) return "Phone";
+  if (format.includes("in-person") || format.includes("in person") || format.includes("on-site")) {
+    return "On-Site";
+  }
+  if (format.includes("employer site") || format.includes("office") || format.includes("campus")) {
+    return "On-Site";
+  }
+  if (format.includes("virtual") || format.includes("hybrid") || format.includes("online")) return "Other";
+  if (format.includes("unknown")) return "Not set";
+  return "Other";
+};
+
+export const mapLegacyPipeline = (record: Partial<Interview>): PipelineStep => {
+  const hasDate = Boolean(record.interviewDateTime);
+  if (isPipelineStep(record.pipeline)) return record.pipeline;
+  if (
+    record.pipeline === "Screening Round Scheduled" ||
+    record.pipeline === "Additional Interview Round Scheduled"
+  ) {
+    return hasDate ? "Interview Scheduled" : "Waiting for Employer Response";
+  }
   const status = record.status?.toLowerCase() ?? "";
   const stage = record.stage?.toLowerCase() ?? "";
-  const hasDate = Boolean(record.interviewDateTime);
 
   if (status.includes("need to email")) return "Student Needs to Contact Employer";
   if (status.includes("email sent") || status.includes("waiting")) return "Waiting for Employer Response";
@@ -87,9 +134,9 @@ export const mapLegacyPipeline = (record: Partial<Interview>): PipelineStep => {
   if (status.includes("interview completed")) return "Interview Completed";
   if (status.includes("follow-up")) return "Follow-Up Sent / Done";
   if (status.includes("rejected") || status.includes("closed")) return "Withdrawn";
-  if (stage.includes("phone")) return "Screening Round Scheduled";
+  if (stage.includes("phone")) return hasDate ? "Interview Scheduled" : "Waiting for Employer Response";
   if (stage.includes("technical") || stage.includes("behavioral") || stage.includes("final")) {
-    return "Additional Interview Round Scheduled";
+    return hasDate ? "Interview Scheduled" : "Waiting for Employer Response";
   }
   if (hasDate) return "Interview Scheduled";
 
@@ -159,11 +206,12 @@ export const normalizeInterview = (interview: Interview): Interview => {
   return {
     ...current,
     pipeline: mapLegacyPipeline(interview),
-    interviewFormat: interview.interviewFormat ?? "Unknown",
+    interviewFormat: normalizeInterviewFormat(interview.interviewFormat),
     roundLabel: interview.roundLabel ?? "",
     jobDescriptionLink,
     links,
     contacts,
+    notes: normalizeNotes(interview.notes, interview.source),
     contactPerson: interview.contactPerson ?? contacts[0]?.name ?? ""
   };
 };
@@ -175,14 +223,14 @@ export const interviewToDraft = (interview: Interview): InterviewDraft => {
     position: normalized.position,
     pipeline: normalized.pipeline,
     interviewDateTime: normalized.interviewDateTime ?? "",
-    interviewFormat: normalized.interviewFormat ?? "Unknown",
+    interviewFormat: normalizeInterviewFormat(normalized.interviewFormat),
     roundLabel: normalized.roundLabel ?? "",
     contactPerson: normalized.contactPerson ?? normalized.contacts?.[0]?.name ?? "",
     contacts: normalized.contacts ?? [],
     locationOrLink: normalized.locationOrLink ?? "",
     jobDescriptionLink: normalized.jobDescriptionLink ?? "",
     links: normalized.links ?? [],
-    notes: normalized.notes ?? "",
+    notes: normalizeNotes(normalized.notes, normalized.source),
     questions: normalized.questions ?? "",
     source: normalized.source ?? "manual",
     drexelJobId: normalized.drexelJobId ?? "",
@@ -197,9 +245,10 @@ export const prepareDraftForSave = (draft: InterviewDraft): InterviewDraft => {
   return {
     ...current,
     pipeline: mapLegacyPipeline(draft as Partial<Interview>),
-    interviewFormat: draft.interviewFormat ?? "Unknown",
+    interviewFormat: normalizeInterviewFormat(draft.interviewFormat),
     contacts,
     links,
+    notes: normalizeNotes(draft.notes, draft.source),
     jobDescriptionLink:
       draft.jobDescriptionLink ??
       links.find((link) => link.type === "job-description" || link.type === "posting")?.url ??
@@ -229,7 +278,7 @@ export const getMissingFields = (interview: Interview): MissingFieldKey[] => {
     ["pipeline", Boolean(normalized.pipeline)]
   ];
 
-  if (isCommunicationNeededPipeline(normalized.pipeline)) {
+  if (isContactRequiredPipeline(normalized.pipeline)) {
     fields.push(["contacts", contacts.length > 0]);
   }
 
@@ -237,7 +286,7 @@ export const getMissingFields = (interview: Interview): MissingFieldKey[] => {
     fields.push(["interviewDateTime", Boolean(normalized.interviewDateTime?.trim())]);
     fields.push([
       "interviewFormat",
-      Boolean(normalized.interviewFormat && normalized.interviewFormat !== "Unknown")
+      Boolean(normalized.interviewFormat && normalized.interviewFormat !== "Not set")
     ]);
     fields.push(["locationOrLink", Boolean(normalized.locationOrLink?.trim())]);
   }

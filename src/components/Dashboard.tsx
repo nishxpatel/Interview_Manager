@@ -29,6 +29,7 @@ import type {
   MissingFieldKey,
   PipelineStep
 } from "../types/interview";
+import { INTERVIEW_FORMATS, PIPELINE_STEPS } from "../types/interview";
 
 interface DashboardProps {
   user: AppUser;
@@ -45,6 +46,7 @@ interface DashboardFilters {
   activity: string;
   missing: string;
   contact: string;
+  format: string;
   location: string;
   source: string;
 }
@@ -59,6 +61,7 @@ const emptyFilters: DashboardFilters = {
   activity: "all",
   missing: "all",
   contact: "",
+  format: "",
   location: "",
   source: ""
 };
@@ -132,7 +135,9 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
           (filters.missing === "missing" && missingFields.length > 0) ||
           (filters.missing === "complete" && missingFields.length === 0)) &&
         (!contact || contactSearchText(contacts).toLowerCase().includes(contact)) &&
-        (!location || normalized.locationOrLink?.toLowerCase().includes(location)) &&
+        (!filters.format || normalized.interviewFormat === filters.format) &&
+        (!location ||
+          [normalized.locationOrLink, normalized.interviewFormat].join(" ").toLowerCase().includes(location)) &&
         (!filters.source || (normalized.source ?? "manual") === filters.source)
       );
     });
@@ -140,17 +145,14 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
 
   const filterOptions = useMemo(() => {
     const companies = new Set<string>();
-    const pipelines = new Set<string>();
     const sources = new Set<string>();
     interviews.forEach((item) => {
       const normalized = normalizeInterview(item);
       if (normalized.company) companies.add(normalized.company);
-      pipelines.add(normalized.pipeline);
       sources.add(normalized.source ?? "manual");
     });
     return {
       companies: Array.from(companies).sort(),
-      pipelines: Array.from(pipelines).sort(),
       sources: Array.from(sources).sort()
     };
   }, [interviews]);
@@ -333,7 +335,7 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
               onChange={(event) => updateFilter("pipeline", event.target.value)}
             >
               <option value="">Any pipeline step</option>
-              {filterOptions.pipelines.map((option) => (
+              {PIPELINE_STEPS.map((option) => (
                 <option key={option}>{option}</option>
               ))}
             </select>
@@ -386,11 +388,23 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
             />
           </label>
           <label className="field">
-            <span>Location/type</span>
+            <span>Format/type</span>
+            <select
+              value={filters.format}
+              onChange={(event) => updateFilter("format", event.target.value)}
+            >
+              <option value="">Any format</option>
+              {INTERVIEW_FORMATS.map((format) => (
+                <option key={format}>{format}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span>Location/link</span>
             <input
               value={filters.location}
               onChange={(event) => updateFilter("location", event.target.value)}
-              placeholder="Zoom, campus, employer site"
+              placeholder="Meeting link, campus, employer site"
             />
           </label>
           <label className="field">

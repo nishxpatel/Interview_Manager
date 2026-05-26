@@ -8,7 +8,7 @@ interface AnalyticsPanelProps {
 }
 
 const formatDate = (value?: string) => {
-  if (!value) return "No date set";
+  if (!value) return "Date not scheduled";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat(undefined, {

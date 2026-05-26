@@ -34,6 +34,8 @@ try {
     reminder: "Thank-you note",
     pipeline: undefined,
     interviewDateTime: "2026-06-01T10:00",
+    notes: "Imported from Drexel. Drexel interview status: Accepted. Drexel location: Campus.",
+    source: "drexel-import",
     contacts: [{ id: "contact", name: "A", title: undefined }],
     links: [{ id: "link", label: "Posting", url: "https://example.com", type: undefined }],
     createdAt: "2026-01-01T00:00:00.000Z",
@@ -41,6 +43,8 @@ try {
   });
 
   assert.equal(normalized.pipeline, "Interview Scheduled");
+  assert.equal(normalized.interviewFormat, "Not set");
+  assert.equal(normalized.notes, "");
   assert.equal("stage" in normalized, false);
   assert.equal("status" in normalized, false);
   assert.equal("followUpReminder" in normalized, false);
@@ -68,6 +72,31 @@ try {
   assert.equal("followUpReminder" in saveDraft, false);
   assert.equal("followUpReminderDate" in saveDraft, false);
   assert.equal("reminder" in saveDraft, false);
+
+  const oldRoundWithoutDate = normalizeInterview({
+    id: "old-round",
+    company: "Legacy Co",
+    position: "Developer Co-op",
+    pipeline: "Additional Interview Round Scheduled",
+    interviewFormat: "In-person",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z"
+  });
+  assert.equal(oldRoundWithoutDate.pipeline, "Waiting for Employer Response");
+  assert.equal(oldRoundWithoutDate.interviewFormat, "On-Site");
+
+  const oldScreeningWithDate = normalizeInterview({
+    id: "old-screen",
+    company: "Legacy Co",
+    position: "Developer Co-op",
+    pipeline: "Screening Round Scheduled",
+    interviewDateTime: "2026-06-01T10:00",
+    interviewFormat: "Virtual",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z"
+  });
+  assert.equal(oldScreeningWithDate.pipeline, "Interview Scheduled");
+  assert.equal(oldScreeningWithDate.interviewFormat, "Other");
 } finally {
   await rm(outdir, { recursive: true, force: true });
 }

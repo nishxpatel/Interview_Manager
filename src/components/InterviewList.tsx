@@ -27,7 +27,7 @@ type InterviewCardProps = Omit<InterviewListProps, "interviews"> & {
 };
 
 const formatDate = (value?: string) => {
-  if (!value) return "No date set";
+  if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat(undefined, {
@@ -37,6 +37,8 @@ const formatDate = (value?: string) => {
     minute: "2-digit"
   }).format(date);
 };
+
+const contactPreviewLimit = 3;
 
 export function InterviewList({
   interviews,
@@ -82,8 +84,17 @@ function InterviewCard({
   const countdown = isScheduledPipeline(normalized.pipeline)
     ? getCountdownText(normalized.interviewDateTime)
     : "";
-  const visibleContacts = contactsExpanded ? contacts : contacts.slice(0, 2);
-  const hiddenContactCount = Math.max(0, contacts.length - visibleContacts.length);
+  const shouldCollapseContacts = contacts.length > contactPreviewLimit;
+  const visibleContacts = contactsExpanded || !shouldCollapseContacts
+    ? contacts
+    : contacts.slice(0, contactPreviewLimit);
+  const hiddenContactCount = Math.max(0, contacts.length - contactPreviewLimit);
+  const dateLabel = formatDate(normalized.interviewDateTime);
+  const showScheduledTags = isScheduledPipeline(normalized.pipeline);
+  const formatLabel =
+    normalized.interviewFormat && normalized.interviewFormat !== "Not set"
+      ? normalized.interviewFormat
+      : "";
 
   return (
     <article className="interview-card">
@@ -94,8 +105,8 @@ function InterviewCard({
           <div className="meta-row">
             <span>{normalized.pipeline}</span>
             {normalized.roundLabel ? <span>{normalized.roundLabel}</span> : null}
-            <span>{formatDate(normalized.interviewDateTime)}</span>
-            <span>{normalized.interviewFormat ?? "Unknown"}</span>
+            {dateLabel ? <span>{dateLabel}</span> : showScheduledTags ? <span>Date not scheduled</span> : null}
+            {formatLabel ? <span>{formatLabel}</span> : showScheduledTags ? <span>Format not set</span> : null}
             {normalized.source === "drexel-import" ? <span>Drexel import</span> : null}
           </div>
           {countdown ? <p className="countdown-pill">{countdown}</p> : null}
@@ -159,28 +170,28 @@ function InterviewCard({
         </span>
       </div>
 
-      <section className="contacts-compact" aria-label="Contacts">
-        <div className="compact-section-heading">
-          <strong>Contacts ({contacts.length})</strong>
-          {contacts.length > 2 ? (
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => setContactsExpanded((current) => !current)}
-            >
-              {contactsExpanded ? (
-                <>
-                  Show fewer <ChevronUp size={14} />
-                </>
-              ) : (
-                <>
-                  Show {hiddenContactCount} more <ChevronDown size={14} />
-                </>
-              )}
-            </button>
-          ) : null}
-        </div>
-        {contacts.length ? (
+      {contacts.length ? (
+        <section className="contacts-compact" aria-label="Contacts">
+          <div className="compact-section-heading">
+            <strong>Contacts ({contacts.length})</strong>
+            {shouldCollapseContacts ? (
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => setContactsExpanded((current) => !current)}
+              >
+                {contactsExpanded ? (
+                  <>
+                    Show fewer contacts <ChevronUp size={14} />
+                  </>
+                ) : (
+                  <>
+                    Show {hiddenContactCount} more contacts <ChevronDown size={14} />
+                  </>
+                )}
+              </button>
+            ) : null}
+          </div>
           <div className="contact-compact-list">
             {visibleContacts.map((contact) => (
               <div className="contact-compact-row" key={contact.id}>
@@ -196,15 +207,8 @@ function InterviewCard({
               </div>
             ))}
           </div>
-        ) : (
-          <div className="empty-compact-row">
-            <span>No contacts yet</span>
-            <button className="missing-inline" onClick={() => onEdit(normalized, "contacts")}>
-              Add contact
-            </button>
-          </div>
-        )}
-      </section>
+        </section>
+      ) : null}
 
       {(normalized.questions || normalized.notes) && (
         <div className="notes-preview">
