@@ -4,11 +4,17 @@ import { ArrowRight, Database, FileUp, NotebookPen } from "lucide-react";
 interface HomePageProps {
   authLoading: boolean;
   hasFirebaseConfig: boolean;
-  onSignIn: () => void;
+  onPrimaryAction: () => void;
+  primaryActionLabel: string;
   featureIcons: LucideIcon[];
 }
 
-export function HomePage({ authLoading, hasFirebaseConfig, onSignIn }: HomePageProps) {
+export function HomePage({
+  authLoading,
+  hasFirebaseConfig,
+  onPrimaryAction,
+  primaryActionLabel
+}: HomePageProps) {
   return (
     <section className="home-shell">
       <div className="hero">
@@ -20,8 +26,8 @@ export function HomePage({ authLoading, hasFirebaseConfig, onSignIn }: HomePageP
             companies, stages, dates, recruiter details, preparation notes, and pipeline results.
           </p>
           <div className="hero-actions">
-            <button className="primary-button large" onClick={onSignIn} disabled={authLoading}>
-              {hasFirebaseConfig ? "Sign in with Google" : "Open local demo"}
+            <button className="primary-button large" onClick={onPrimaryAction} disabled={authLoading}>
+              {primaryActionLabel}
               <ArrowRight size={18} />
             </button>
             <span className="home-trust">

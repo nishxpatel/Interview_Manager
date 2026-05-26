@@ -7,8 +7,10 @@ import {
   LayoutDashboard,
   LogIn,
   LogOut,
+  Moon,
   Plus,
-  ShieldCheck
+  ShieldCheck,
+  Sun
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 import { HomePage } from "./components/HomePage";
@@ -22,12 +24,28 @@ const demoUser: AppUser = {
   isDemo: true
 };
 
+type ThemePreference = "light" | "dark";
+type AppView = "home" | "dashboard";
+
+const getInitialTheme = (): ThemePreference => {
+  const stored = window.localStorage.getItem("interview-manager:theme");
+  if (stored === "light" || stored === "dark") return stored;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+};
+
 function App() {
   const [user, setUser] = useState<AppUser | null>(() => {
     return window.localStorage.getItem("interview-manager:demo-user") ? demoUser : null;
   });
   const [authLoading, setAuthLoading] = useState(hasFirebaseConfig);
   const [authError, setAuthError] = useState("");
+  const [theme, setTheme] = useState<ThemePreference>(getInitialTheme);
+  const [view, setView] = useState<AppView>("home");
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("interview-manager:theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!firebaseAuth) return;
@@ -56,11 +74,13 @@ function App() {
     if (!firebaseAuth) {
       window.localStorage.setItem("interview-manager:demo-user", "true");
       setUser(demoUser);
+      setView("dashboard");
       return;
     }
 
     try {
       await signInWithPopup(firebaseAuth, googleProvider);
+      setView("dashboard");
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "Unable to sign in.");
     }
@@ -70,12 +90,17 @@ function App() {
     if (firebaseAuth) await signOut(firebaseAuth);
     window.localStorage.removeItem("interview-manager:demo-user");
     setUser(null);
+    setView("home");
   };
 
   return (
     <main>
       <header className="topbar">
-        <a className="brand" href="/" aria-label="Interview Manager home">
+        <button
+          className="brand brand-button"
+          onClick={() => setView("home")}
+          aria-label="Interview Manager home"
+        >
           <span className="brand-mark">
             <BriefcaseBusiness size={22} />
           </span>
@@ -83,8 +108,26 @@ function App() {
             <strong>Interview Manager</strong>
             <small>Drexel-ready pipeline tracker</small>
           </span>
-        </a>
+        </button>
         <nav className="topbar-actions" aria-label="Primary">
+          {user ? (
+            <button
+              className="ghost-button"
+              onClick={() => setView("dashboard")}
+              aria-current={view === "dashboard" ? "page" : undefined}
+            >
+              <LayoutDashboard size={17} />
+              Dashboard
+            </button>
+          ) : null}
+          <button
+            className="icon-button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
           <span className="mode-pill">
             <ShieldCheck size={15} />
             {authModeLabel}
@@ -111,13 +154,16 @@ function App() {
 
       {authError ? <p className="app-error">{authError}</p> : null}
 
-      {user ? (
+      {user && view === "dashboard" ? (
         <Dashboard user={user} />
       ) : (
         <HomePage
           authLoading={authLoading}
           hasFirebaseConfig={hasFirebaseConfig}
-          onSignIn={handleSignIn}
+          onPrimaryAction={user ? () => setView("dashboard") : handleSignIn}
+          primaryActionLabel={
+            user ? "Open dashboard" : hasFirebaseConfig ? "Sign in with Google" : "Open local demo"
+          }
           featureIcons={[LayoutDashboard, CalendarClock, FileUp, ShieldCheck, Plus]}
         />
       )}

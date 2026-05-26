@@ -21,6 +21,15 @@ export type InterviewStage =
   | "Offer"
   | "Closed";
 
+export interface InterviewContact {
+  id: string;
+  name: string;
+  title?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+}
+
 export interface Interview {
   id: string;
   company: string;
@@ -29,6 +38,7 @@ export interface Interview {
   status: InterviewStatus;
   interviewDateTime?: string;
   contactPerson?: string;
+  contacts?: InterviewContact[];
   locationOrLink?: string;
   notes?: string;
   questions?: string;
@@ -41,6 +51,15 @@ export interface Interview {
 }
 
 export type InterviewDraft = Omit<Interview, "id" | "createdAt" | "updatedAt">;
+
+export type MissingFieldKey =
+  | "company"
+  | "position"
+  | "interviewDateTime"
+  | "contacts"
+  | "locationOrLink"
+  | "questions"
+  | "followUpReminder";
 
 export interface AppUser {
   uid: string;

@@ -1,4 +1,4 @@
-import type { InterviewDraft, InterviewStatus } from "../types/interview";
+import type { InterviewContact, InterviewDraft, InterviewStatus } from "../types/interview";
 
 const drexelStatusMap: Record<string, InterviewStatus> = {
   accepted: "Need to email",
@@ -48,6 +48,29 @@ const mapStatus = (rawStatus?: string): InterviewStatus => {
   return hit?.[1] ?? "Need to email";
 };
 
+const parseContacts = (lines: string[]): InterviewContact[] => {
+  const contact: InterviewContact = {
+    id: crypto.randomUUID(),
+    name: "",
+    title: "",
+    email: "",
+    phone: "",
+    notes: ""
+  };
+
+  lines.forEach((line) => {
+    const email = line.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
+    const phone = line.match(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}/)?.[0];
+    const name = line.match(/(?:Contact|Recruiter|Interviewer)(?: Person| Name)?:\s*(.*)$/i)?.[1];
+
+    if (email) contact.email = email;
+    if (phone) contact.phone = phone;
+    if (name) contact.name = clean(name.replace(email ?? "", "").replace(phone ?? "", ""));
+  });
+
+  return contact.name || contact.email || contact.phone ? [contact] : [];
+};
+
 // The Drexel page is copy/paste HTML rendered as plain text. This parser keeps the
 // assumptions narrow: each job begins with a title/id + Employer line, followed by
 // optional Job Length, General Job Location, Interview type, and Interview status.
@@ -73,10 +96,12 @@ export const parseDrexelInterviewText = (content: string): InterviewDraft[] => {
     let locationOrLink = "";
     let interviewType = "";
     let rawStatus = "";
+    const recordLines: string[] = [];
 
     for (let lookahead = index + 1; lookahead < lines.length; lookahead += 1) {
       const line = lines[lookahead];
       if (parseHeader(line)) break;
+      recordLines.push(line);
 
       const jobLengthMatch = line.match(/Job Length:\s*(.*?)\s+¤/i);
       const locationMatch = line.match(/General Job Location:\s*(.*)$/i);
@@ -101,6 +126,7 @@ export const parseDrexelInterviewText = (content: string): InterviewDraft[] => {
       questions: "",
       followUpReminder: "",
       contactPerson: "",
+      contacts: parseContacts(recordLines),
       interviewDateTime: "",
       source: "drexel-import",
       jobLength: interviewType ? `${jobLength} | ${interviewType}` : jobLength

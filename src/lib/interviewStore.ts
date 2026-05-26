@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import type { Interview, InterviewDraft } from "../types/interview";
 import { firestore } from "./firebase";
+import { normalizeInterview, prepareDraftForSave } from "./interviewUtils";
 
 const localKey = (uid: string) => `interview-manager:${uid}:interviews`;
 
@@ -20,7 +21,7 @@ const now = () => new Date().toISOString();
 const fromStored = (raw: string | null): Interview[] => {
   if (!raw) return [];
   try {
-    return JSON.parse(raw) as Interview[];
+    return (JSON.parse(raw) as Interview[]).map(normalizeInterview);
   } catch {
     return [];
   }
@@ -56,7 +57,7 @@ export const watchInterviews = (
       onChange(
         snapshot.docs.map((item) => {
           const data = item.data() as Omit<Interview, "id">;
-          return { ...data, id: item.id };
+          return normalizeInterview({ ...data, id: item.id });
         })
       );
     },
@@ -73,7 +74,7 @@ export const createInterview = async (uid: string, draft: InterviewDraft) => {
   if (!firestore) {
     const current = fromStored(window.localStorage.getItem(localKey(uid)));
     const interview: Interview = {
-      ...draft,
+      ...prepareDraftForSave(draft),
       id: crypto.randomUUID(),
       createdAt: now(),
       updatedAt: now()
@@ -83,7 +84,7 @@ export const createInterview = async (uid: string, draft: InterviewDraft) => {
   }
 
   const docRef = await addDoc(collection(firestore, "users", uid, "interviews"), {
-    ...draft,
+    ...prepareDraftForSave(draft),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
@@ -100,7 +101,9 @@ export const updateInterview = async (
     saveLocal(
       uid,
       current.map((item) =>
-        item.id === interviewId ? { ...item, ...draft, updatedAt: now() } : item
+        item.id === interviewId
+          ? normalizeInterview({ ...item, ...prepareDraftForSave(draft), updatedAt: now() })
+          : item
       )
     );
     return;
@@ -108,7 +111,7 @@ export const updateInterview = async (
 
   await setDoc(
     doc(firestore, "users", uid, "interviews", interviewId),
-    { ...draft, updatedAt: serverTimestamp() },
+    { ...prepareDraftForSave(draft), updatedAt: serverTimestamp() },
     { merge: true }
   );
 };
