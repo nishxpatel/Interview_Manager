@@ -62,7 +62,7 @@ export function DrexelImport({ onCancel, onImport }: DrexelImportProps) {
             value={content}
             rows={10}
             onChange={(event) => setContent(event.target.value)}
-            placeholder="Paste the page text here. The parser looks for job title, employer, job length, location, interview type, and interview status."
+            placeholder="Paste the page text here. The parser looks for job title, employer, job length, location, instructions, contacts, links, and interview type."
           />
         </label>
 
@@ -75,13 +75,16 @@ export function DrexelImport({ onCancel, onImport }: DrexelImportProps) {
           </div>
           {parsed.length ? (
             parsed.slice(0, 5).map((item) => (
-              <div className="preview-import-row" key={`${item.company}-${item.position}-${item.drexelJobId}`}>
+              <div
+                className="preview-import-row"
+                key={`${item.company}-${item.position}-${item.drexelJobId}`}
+              >
                 <FileText size={16} />
                 <span>
                   <strong>{item.company}</strong>
                   {item.position}
                 </span>
-                <em>{item.status}</em>
+                <em>{item.pipeline}</em>
               </div>
             ))
           ) : (

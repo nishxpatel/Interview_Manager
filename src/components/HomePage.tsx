@@ -20,10 +20,10 @@ export function HomePage({
       <div className="hero">
         <div className="hero-copy">
           <p className="eyebrow">Built for Drexel co-op search, useful for every interview loop</p>
-          <h1>Keep every interview, note, follow-up, and outcome in one place.</h1>
+          <h1>Keep every granted interview, note, schedule, and follow-up in one place.</h1>
           <p>
             Interview Manager gives students and job seekers a focused dashboard for tracking
-            companies, stages, dates, recruiter details, preparation notes, and pipeline results.
+            companies, pipeline steps, dates, recruiter details, preparation notes, and follow-ups.
           </p>
           <div className="hero-actions">
             <button className="primary-button large" onClick={onPrimaryAction} disabled={authLoading}>
@@ -43,16 +43,16 @@ export function HomePage({
             <strong>8 active</strong>
           </div>
           {[
-            ["Comcast", "Data Products Co-op", "Date/time finalized"],
-            ["PECO", "Project Controls", "Need to email"],
-            ["College Ave", "Data Engineering", "Waiting for response"]
-          ].map(([company, role, status]) => (
+            ["Comcast", "Data Products Co-op", "Interview Scheduled"],
+            ["PECO", "Project Controls", "Student Needs to Contact Employer"],
+            ["College Ave", "Data Engineering", "Waiting for Employer Response"]
+          ].map(([company, role, pipeline]) => (
             <div className="preview-row" key={`${company}-${role}`}>
               <span>
                 <strong>{company}</strong>
                 <small>{role}</small>
               </span>
-              <em>{status}</em>
+              <em>{pipeline}</em>
             </div>
           ))}
         </div>
@@ -62,7 +62,7 @@ export function HomePage({
         <article>
           <Database size={24} />
           <h2>Structured interview database</h2>
-          <p>Track company, position, stage, status, date, contact, link, and notes.</p>
+          <p>Track company, position, pipeline step, date, contact, link, format, and notes.</p>
         </article>
         <article>
           <NotebookPen size={24} />

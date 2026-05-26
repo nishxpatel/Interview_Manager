@@ -1,13 +1,16 @@
 import { CalendarClock, Edit3, ExternalLink, Trash2 } from "lucide-react";
 import {
-  INTERVIEW_STATUSES,
+  PIPELINE_STEPS,
   type Interview,
-  type InterviewStatus,
-  type MissingFieldKey
+  type MissingFieldKey,
+  type PipelineStep
 } from "../types/interview";
 import {
+  getCountdownText,
   getMissingFields,
+  isScheduledPipeline,
   missingFieldLabels,
+  normalizeInterview,
   normalizeContacts
 } from "../lib/interviewUtils";
 
@@ -15,7 +18,7 @@ interface InterviewListProps {
   interviews: Interview[];
   onEdit: (interview: Interview, focusField?: MissingFieldKey) => void;
   onDelete: (interviewId: string) => Promise<void>;
-  onStatusChange: (interview: Interview, status: InterviewStatus) => Promise<void>;
+  onPipelineChange: (interview: Interview, pipeline: PipelineStep) => Promise<void>;
 }
 
 type InterviewCardProps = Omit<InterviewListProps, "interviews"> & {
@@ -38,7 +41,7 @@ export function InterviewList({
   interviews,
   onEdit,
   onDelete,
-  onStatusChange
+  onPipelineChange
 }: InterviewListProps) {
   if (!interviews.length) {
     return (
@@ -58,7 +61,7 @@ export function InterviewList({
           interview={interview}
           onDelete={onDelete}
           onEdit={onEdit}
-          onStatusChange={onStatusChange}
+          onPipelineChange={onPipelineChange}
         />
       ))}
     </div>
@@ -69,31 +72,40 @@ function InterviewCard({
   interview,
   onEdit,
   onDelete,
-  onStatusChange
+  onPipelineChange
 }: InterviewCardProps) {
-  const contacts = normalizeContacts(interview);
-  const missingFields = getMissingFields(interview);
+  const normalized = normalizeInterview(interview);
+  const contacts = normalizeContacts(normalized);
+  const missingFields = getMissingFields(normalized);
+  const countdown = isScheduledPipeline(normalized.pipeline)
+    ? getCountdownText(normalized.interviewDateTime)
+    : "";
 
   return (
     <article className="interview-card">
       <div className="interview-main">
         <div>
-          <h3>{interview.company}</h3>
-          <p>{interview.position}</p>
+          <h3>{normalized.company}</h3>
+          <p>{normalized.position}</p>
           <div className="meta-row">
-            <span>{interview.stage}</span>
-            <span>{formatDate(interview.interviewDateTime)}</span>
-            {interview.source === "drexel-import" ? <span>Drexel import</span> : null}
+            <span>{normalized.pipeline}</span>
+            {normalized.roundLabel ? <span>{normalized.roundLabel}</span> : null}
+            <span>{formatDate(normalized.interviewDateTime)}</span>
+            <span>{normalized.interviewFormat ?? "Unknown"}</span>
+            {normalized.source === "drexel-import" ? <span>Drexel import</span> : null}
           </div>
+          {countdown ? <p className="countdown-pill">{countdown}</p> : null}
         </div>
         <label className="status-select">
-          <span>Status</span>
+          <span>Pipeline</span>
           <select
-            value={interview.status}
-            onChange={(event) => onStatusChange(interview, event.target.value as InterviewStatus)}
+            value={normalized.pipeline}
+            onChange={(event) =>
+              onPipelineChange(normalized, event.target.value as PipelineStep)
+            }
           >
-            {INTERVIEW_STATUSES.map((status) => (
-              <option key={status}>{status}</option>
+            {PIPELINE_STEPS.map((pipeline) => (
+              <option key={pipeline}>{pipeline}</option>
             ))}
           </select>
         </label>
@@ -103,7 +115,7 @@ function InterviewCard({
         <div className="missing-fields" aria-label="Missing fields">
           <strong>Missing:</strong>
           {missingFields.map((field) => (
-            <button className="missing-field" key={field} onClick={() => onEdit(interview, field)}>
+            <button className="missing-field" key={field} onClick={() => onEdit(normalized, field)}>
               {missingFieldLabels[field]}
             </button>
           ))}
@@ -125,47 +137,57 @@ function InterviewCard({
               ))}
             </span>
           ) : (
-            <button className="missing-inline" onClick={() => onEdit(interview, "contacts")}>
+            <button className="missing-inline" onClick={() => onEdit(normalized, "contacts")}>
               Add contact
             </button>
           )}
         </span>
         <span>
           <strong>Location/link</strong>
-          {interview.locationOrLink ? (
-            interview.locationOrLink.startsWith("http") ? (
-              <a href={interview.locationOrLink} target="_blank" rel="noreferrer">
+          {normalized.locationOrLink ? (
+            normalized.locationOrLink.startsWith("http") ? (
+              <a href={normalized.locationOrLink} target="_blank" rel="noreferrer">
                 Open link <ExternalLink size={13} />
               </a>
             ) : (
-              interview.locationOrLink
+              normalized.locationOrLink
             )
           ) : (
-            <button className="missing-inline" onClick={() => onEdit(interview, "locationOrLink")}>
+            <button className="missing-inline" onClick={() => onEdit(normalized, "locationOrLink")}>
               Add location
             </button>
           )}
         </span>
         <span>
           <strong>Follow-up</strong>
-          {interview.followUpReminder || (
-            <button className="missing-inline" onClick={() => onEdit(interview, "followUpReminder")}>
+          {normalized.followUpReminder || (
+            <button className="missing-inline" onClick={() => onEdit(normalized, "followUpReminder")}>
               Add reminder
             </button>
           )}
         </span>
+        <span>
+          <strong>Job description</strong>
+          {normalized.jobDescriptionLink ? (
+            <a href={normalized.jobDescriptionLink} target="_blank" rel="noreferrer">
+              View posting <ExternalLink size={13} />
+            </a>
+          ) : (
+            "No link"
+          )}
+        </span>
       </div>
 
-      {(interview.questions || interview.notes || contacts.some((contact) => contact.notes)) && (
+      {(normalized.questions || normalized.notes || contacts.some((contact) => contact.notes)) && (
         <div className="notes-preview">
-          {interview.questions ? (
+          {normalized.questions ? (
             <p>
-              <strong>Questions:</strong> {interview.questions}
+              <strong>Questions:</strong> {normalized.questions}
             </p>
           ) : null}
-          {interview.notes ? (
+          {normalized.notes ? (
             <p>
-              <strong>Notes:</strong> {interview.notes}
+              <strong>Notes:</strong> {normalized.notes}
             </p>
           ) : null}
           {contacts
@@ -179,14 +201,14 @@ function InterviewCard({
       )}
 
       <div className="card-actions">
-        <button className="ghost-button" onClick={() => onEdit(interview)}>
+        <button className="ghost-button" onClick={() => onEdit(normalized)}>
           <Edit3 size={16} />
           Edit
         </button>
         <button
           className="danger-button"
           onClick={() => {
-            if (window.confirm("Delete this interview?")) void onDelete(interview.id);
+            if (window.confirm("Delete this interview?")) void onDelete(normalized.id);
           }}
         >
           <Trash2 size={16} />

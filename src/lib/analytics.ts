@@ -1,27 +1,37 @@
-import type { Interview, InterviewStatus } from "../types/interview";
-
-const statusIsActive = (status: InterviewStatus) =>
-  !["Offer received", "Rejected/closed", "Interview completed"].includes(status);
+import type { Interview } from "../types/interview";
+import {
+  isCommunicationNeededPipeline,
+  isDonePipeline,
+  isScheduledPipeline,
+  normalizeInterview
+} from "./interviewUtils";
 
 export const getAnalytics = (interviews: Interview[]) => {
+  const normalized = interviews.map(normalizeInterview);
   const now = new Date();
-  const byStatus = interviews.reduce<Record<string, number>>((acc, interview) => {
-    acc[interview.status] = (acc[interview.status] ?? 0) + 1;
+  const byPipeline = normalized.reduce<Record<string, number>>((acc, interview) => {
+    acc[interview.pipeline] = (acc[interview.pipeline] ?? 0) + 1;
     return acc;
   }, {});
 
-  const upcoming = interviews.filter((interview) => {
-    if (!interview.interviewDateTime) return false;
-    return new Date(interview.interviewDateTime) >= now;
-  }).length;
+  const scheduled = normalized
+    .filter((interview) => isScheduledPipeline(interview.pipeline) && interview.interviewDateTime)
+    .sort(
+      (a, b) =>
+        new Date(a.interviewDateTime ?? "").getTime() -
+        new Date(b.interviewDateTime ?? "").getTime()
+    );
 
   return {
-    total: interviews.length,
-    byStatus,
-    upcoming,
-    completed: interviews.filter((item) => item.status === "Interview completed").length,
-    offers: interviews.filter((item) => item.status === "Offer received").length,
-    rejected: interviews.filter((item) => item.status === "Rejected/closed").length,
-    active: interviews.filter((item) => statusIsActive(item.status)).length
+    total: normalized.length,
+    byPipeline,
+    scheduled,
+    upcoming: scheduled.filter((interview) => new Date(interview.interviewDateTime ?? "") >= now)
+      .length,
+    communicationNeeded: normalized.filter((item) => isCommunicationNeededPipeline(item.pipeline))
+      .length,
+    completed: normalized.filter((item) => item.pipeline === "Interview Completed").length,
+    done: normalized.filter((item) => isDonePipeline(item.pipeline)).length,
+    active: normalized.filter((item) => !isDonePipeline(item.pipeline)).length
   };
 };

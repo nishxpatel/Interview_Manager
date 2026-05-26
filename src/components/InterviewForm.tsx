@@ -1,35 +1,28 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Plus, Save, Trash2, X } from "lucide-react";
 import {
-  INTERVIEW_STATUSES,
+  INTERVIEW_FORMATS,
+  PIPELINE_STEPS,
+  SCHEDULED_PIPELINE_STEPS,
   type Interview,
   type InterviewContact,
   type InterviewDraft,
-  type InterviewStage,
-  type MissingFieldKey
+  type MissingFieldKey,
+  type PipelineStep
 } from "../types/interview";
-import { createBlankContact, interviewToDraft } from "../lib/interviewUtils";
-
-const stages: InterviewStage[] = [
-  "Application",
-  "Phone screen",
-  "Technical",
-  "Behavioral",
-  "Final round",
-  "Co-op interview",
-  "Offer",
-  "Closed"
-];
+import { createBlankContact, interviewToDraft, isScheduledPipeline } from "../lib/interviewUtils";
 
 const blankDraft: InterviewDraft = {
   company: "",
   position: "",
-  stage: "Co-op interview",
-  status: "Need to email",
+  pipeline: "Student Needs to Contact Employer",
   interviewDateTime: "",
+  interviewFormat: "Unknown",
+  roundLabel: "",
   contactPerson: "",
   contacts: [],
   locationOrLink: "",
+  jobDescriptionLink: "",
   notes: "",
   questions: "",
   followUpReminder: "",
@@ -104,6 +97,10 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
       setError("Company and position are required.");
       return;
     }
+    if (isScheduledPipeline(draft.pipeline) && !draft.interviewDateTime?.trim()) {
+      setError("Date and time are required once an interview round is scheduled.");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -125,7 +122,7 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
         <div className="modal-header">
           <div>
             <h2>{interview ? "Edit interview" : "Add interview"}</h2>
-            <p>Company, role, schedule, status, notes, and follow-up details.</p>
+            <p>Company, role, pipeline, schedule, contacts, notes, and follow-up details.</p>
           </div>
           <button type="button" className="icon-button" onClick={onCancel} aria-label="Close">
             <X size={18} />
@@ -152,24 +149,26 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
             />
           </label>
           <label className="field">
-            <span>Stage</span>
+            <span>Pipeline</span>
             <select
-              value={draft.stage}
-              onChange={(e) => update("stage", e.target.value as InterviewStage)}
+              data-focus="pipeline"
+              value={draft.pipeline}
+              onChange={(e) => update("pipeline", e.target.value as PipelineStep)}
             >
-              {stages.map((stage) => (
-                <option key={stage}>{stage}</option>
+              {PIPELINE_STEPS.map((pipeline) => (
+                <option key={pipeline}>{pipeline}</option>
               ))}
             </select>
           </label>
           <label className="field">
-            <span>Status</span>
+            <span>Interview format</span>
             <select
-              value={draft.status}
-              onChange={(e) => update("status", e.target.value as InterviewDraft["status"])}
+              data-focus="interviewFormat"
+              value={draft.interviewFormat ?? "Unknown"}
+              onChange={(e) => update("interviewFormat", e.target.value as InterviewDraft["interviewFormat"])}
             >
-              {INTERVIEW_STATUSES.map((status) => (
-                <option key={status}>{status}</option>
+              {INTERVIEW_FORMATS.map((format) => (
+                <option key={format}>{format}</option>
               ))}
             </select>
           </label>
@@ -181,13 +180,25 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
               value={draft.interviewDateTime}
               onChange={(e) => update("interviewDateTime", e.target.value)}
             />
+            {SCHEDULED_PIPELINE_STEPS.includes(draft.pipeline) ? (
+              <small>Required for scheduled pipeline steps.</small>
+            ) : null}
           </label>
-          <label className="field wide">
+          <label className="field">
+            <span>Round label</span>
+            <input
+              value={draft.roundLabel}
+              onChange={(e) => update("roundLabel", e.target.value)}
+              placeholder="Screening, first round, second round, final"
+            />
+          </label>
+          <label className="field">
             <span>Location or meeting link</span>
             <input
               data-focus="locationOrLink"
               value={draft.locationOrLink}
               onChange={(e) => update("locationOrLink", e.target.value)}
+              placeholder="Address, office, Zoom, Teams, phone number"
             />
           </label>
           <label className="field">
@@ -202,6 +213,15 @@ export function InterviewForm({ interview, initialFocus, onCancel, onSave }: Int
           <label className="field">
             <span>Drexel job ID</span>
             <input value={draft.drexelJobId} onChange={(e) => update("drexelJobId", e.target.value)} />
+          </label>
+          <label className="field wide">
+            <span>Job description link</span>
+            <input
+              data-focus="jobDescriptionLink"
+              value={draft.jobDescriptionLink}
+              onChange={(e) => update("jobDescriptionLink", e.target.value)}
+              placeholder="Paste the Drexel job posting or external job description URL"
+            />
           </label>
           <section className="field wide contacts-editor" aria-label="Contacts">
             <div className="subsection-heading">

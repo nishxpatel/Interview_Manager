@@ -14,9 +14,18 @@ import {
   contactSearchText,
   getMissingFields,
   interviewToDraft,
+  isDonePipeline,
+  isScheduledPipeline,
+  normalizeInterview,
   normalizeContacts
 } from "../lib/interviewUtils";
-import type { AppUser, Interview, InterviewDraft, MissingFieldKey } from "../types/interview";
+import type {
+  AppUser,
+  Interview,
+  InterviewDraft,
+  MissingFieldKey,
+  PipelineStep
+} from "../types/interview";
 
 interface DashboardProps {
   user: AppUser;
@@ -26,7 +35,7 @@ interface DashboardFilters {
   search: string;
   company: string;
   position: string;
-  stageStatus: string;
+  pipeline: string;
   dateFrom: string;
   dateTo: string;
   activity: string;
@@ -40,7 +49,7 @@ const emptyFilters: DashboardFilters = {
   search: "",
   company: "",
   position: "",
-  stageStatus: "",
+  pipeline: "",
   dateFrom: "",
   dateTo: "",
   activity: "all",
@@ -73,65 +82,66 @@ export function Dashboard({ user }: DashboardProps) {
     const now = new Date();
 
     return interviews.filter((item) => {
-      const contacts = normalizeContacts(item);
+      const normalized = normalizeInterview(item);
+      const contacts = normalizeContacts(normalized);
       const majorText = [
-        item.company,
-        item.position,
-        item.stage,
-        item.status,
-        item.locationOrLink,
-        item.notes,
-        item.questions,
-        item.drexelJobId,
-        item.jobLength,
-        item.source,
+        normalized.company,
+        normalized.position,
+        normalized.pipeline,
+        normalized.interviewFormat,
+        normalized.roundLabel,
+        normalized.locationOrLink,
+        normalized.jobDescriptionLink,
+        normalized.notes,
+        normalized.questions,
+        normalized.drexelJobId,
+        normalized.jobLength,
+        normalized.source,
         contactSearchText(contacts)
       ]
         .join(" ")
         .toLowerCase();
-      const interviewDate = item.interviewDateTime ? new Date(item.interviewDateTime) : null;
-      const isCompleted = ["Interview completed", "Offer received", "Rejected/closed"].includes(
-        item.status
-      );
+      const interviewDate = normalized.interviewDateTime
+        ? new Date(normalized.interviewDateTime)
+        : null;
+      const isCompleted = isDonePipeline(normalized.pipeline) || normalized.pipeline === "Interview Completed";
       const isUpcoming = Boolean(interviewDate && interviewDate >= now);
-      const missingFields = getMissingFields(item);
+      const missingFields = getMissingFields(normalized);
 
       return (
         (!search || majorText.includes(search)) &&
-        (!filters.company || item.company === filters.company) &&
-        (!position || item.position.toLowerCase().includes(position)) &&
-        (!filters.stageStatus ||
-          item.stage === filters.stageStatus ||
-          item.status === filters.stageStatus) &&
+        (!filters.company || normalized.company === filters.company) &&
+        (!position || normalized.position.toLowerCase().includes(position)) &&
+        (!filters.pipeline || normalized.pipeline === filters.pipeline) &&
         (!from || (interviewDate && interviewDate >= from)) &&
         (!to || (interviewDate && interviewDate <= to)) &&
         (filters.activity === "all" ||
-          (filters.activity === "upcoming" && isUpcoming) ||
+          (filters.activity === "upcoming" && isUpcoming && isScheduledPipeline(normalized.pipeline)) ||
           (filters.activity === "completed" && isCompleted) ||
           (filters.activity === "active" && !isCompleted)) &&
         (filters.missing === "all" ||
           (filters.missing === "missing" && missingFields.length > 0) ||
           (filters.missing === "complete" && missingFields.length === 0)) &&
         (!contact || contactSearchText(contacts).toLowerCase().includes(contact)) &&
-        (!location || item.locationOrLink?.toLowerCase().includes(location)) &&
-        (!filters.source || (item.source ?? "manual") === filters.source)
+        (!location || normalized.locationOrLink?.toLowerCase().includes(location)) &&
+        (!filters.source || (normalized.source ?? "manual") === filters.source)
       );
     });
   }, [filters, interviews]);
 
   const filterOptions = useMemo(() => {
     const companies = new Set<string>();
-    const stageStatuses = new Set<string>();
+    const pipelines = new Set<string>();
     const sources = new Set<string>();
     interviews.forEach((item) => {
-      if (item.company) companies.add(item.company);
-      stageStatuses.add(item.status);
-      stageStatuses.add(item.stage);
-      sources.add(item.source ?? "manual");
+      const normalized = normalizeInterview(item);
+      if (normalized.company) companies.add(normalized.company);
+      pipelines.add(normalized.pipeline);
+      sources.add(normalized.source ?? "manual");
     });
     return {
       companies: Array.from(companies).sort(),
-      stageStatuses: Array.from(stageStatuses).sort(),
+      pipelines: Array.from(pipelines).sort(),
       sources: Array.from(sources).sort()
     };
   }, [interviews]);
@@ -173,8 +183,8 @@ export function Dashboard({ user }: DashboardProps) {
           <p className="eyebrow">Dashboard</p>
           <h1>Interview pipeline</h1>
           <p>
-            Track outreach, scheduled interviews, preparation notes, follow-ups, offers, and closed
-            opportunities.
+            Track employer communication, scheduled rounds, interview prep, and follow-ups after
+            an interview has been granted.
           </p>
         </div>
         <div className="dashboard-actions">
@@ -246,13 +256,13 @@ export function Dashboard({ user }: DashboardProps) {
             />
           </label>
           <label className="field">
-            <span>Stage/status</span>
+            <span>Pipeline step</span>
             <select
-              value={filters.stageStatus}
-              onChange={(event) => updateFilter("stageStatus", event.target.value)}
+              value={filters.pipeline}
+              onChange={(event) => updateFilter("pipeline", event.target.value)}
             >
-              <option value="">Any stage/status</option>
-              {filterOptions.stageStatuses.map((option) => (
+              <option value="">Any pipeline step</option>
+              {filterOptions.pipelines.map((option) => (
                 <option key={option}>{option}</option>
               ))}
             </select>
@@ -282,7 +292,7 @@ export function Dashboard({ user }: DashboardProps) {
               <option value="all">All records</option>
               <option value="upcoming">Upcoming</option>
               <option value="active">Active</option>
-              <option value="completed">Completed/closed</option>
+              <option value="completed">Completed/done</option>
             </select>
           </label>
           <label className="field">
@@ -335,8 +345,11 @@ export function Dashboard({ user }: DashboardProps) {
             setIsFormOpen(true);
           }}
           onDelete={(interviewId) => deleteInterview(user.uid, interviewId)}
-          onStatusChange={(interview, status) =>
-            updateInterview(user.uid, interview.id, { ...interviewToDraft(interview), status })
+          onPipelineChange={(interview, pipeline) =>
+            updateInterview(user.uid, interview.id, {
+              ...interviewToDraft(interview),
+              pipeline: pipeline as PipelineStep
+            })
           }
         />
       </div>

@@ -1,25 +1,27 @@
-export const INTERVIEW_STATUSES = [
-  "Need to email",
-  "Email sent",
-  "Waiting for response",
-  "Date/time finalized",
-  "Interview completed",
-  "Follow-up sent",
-  "Offer received",
-  "Rejected/closed"
+export const PIPELINE_STEPS = [
+  "Student Needs to Contact Employer",
+  "Waiting for Employer to Contact Student",
+  "Waiting for Employer Response",
+  "Scheduling in Progress",
+  "Interview Scheduled",
+  "Screening Round Scheduled",
+  "Additional Interview Round Scheduled",
+  "Interview Completed",
+  "Follow-Up Sent / Done",
+  "Withdrawn"
 ] as const;
 
-export type InterviewStatus = (typeof INTERVIEW_STATUSES)[number];
+export type PipelineStep = (typeof PIPELINE_STEPS)[number];
 
-export type InterviewStage =
-  | "Application"
-  | "Phone screen"
-  | "Technical"
-  | "Behavioral"
-  | "Final round"
-  | "Co-op interview"
-  | "Offer"
-  | "Closed";
+export const SCHEDULED_PIPELINE_STEPS: PipelineStep[] = [
+  "Interview Scheduled",
+  "Screening Round Scheduled",
+  "Additional Interview Round Scheduled"
+];
+
+export const INTERVIEW_FORMATS = ["Unknown", "Virtual", "Phone", "In-person", "Hybrid"] as const;
+
+export type InterviewFormat = (typeof INTERVIEW_FORMATS)[number];
 
 export interface InterviewContact {
   id: string;
@@ -34,12 +36,16 @@ export interface Interview {
   id: string;
   company: string;
   position: string;
-  stage: InterviewStage;
-  status: InterviewStatus;
+  pipeline: PipelineStep;
+  stage?: string;
+  status?: string;
   interviewDateTime?: string;
+  interviewFormat?: InterviewFormat;
+  roundLabel?: string;
   contactPerson?: string;
   contacts?: InterviewContact[];
   locationOrLink?: string;
+  jobDescriptionLink?: string;
   notes?: string;
   questions?: string;
   followUpReminder?: string;
@@ -55,9 +61,12 @@ export type InterviewDraft = Omit<Interview, "id" | "createdAt" | "updatedAt">;
 export type MissingFieldKey =
   | "company"
   | "position"
+  | "pipeline"
   | "interviewDateTime"
+  | "interviewFormat"
   | "contacts"
   | "locationOrLink"
+  | "jobDescriptionLink"
   | "questions"
   | "followUpReminder";
 

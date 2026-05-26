@@ -11,8 +11,8 @@ GitHub repository: <https://github.com/nishxpatel/Interview_Manager>
 - Google sign-in with Firebase Authentication
 - Per-user interview storage in Cloud Firestore
 - Add, edit, delete, and update interview records
-- Track company, position, stage, status, date/time, contact, location/link, questions, notes, and follow-up reminders
-- Pipeline analytics for total, upcoming, completed, offers, rejections, active opportunities, and status counts
+- Track company, position, pipeline step, date/time, format, contacts, location/link, job description link, questions, notes, and follow-up reminders
+- Pipeline analytics for total, upcoming scheduled interviews, communication-needed records, completed interviews, done/withdrawn records, and active records
 - Drexel import tool for pasted content from "Maintain your Co-Op Interview Requests"
 - Responsive React interface for desktop and mobile
 - GitHub Pages deployment workflow
@@ -117,9 +117,11 @@ The current parser extracts:
 - Job length
 - General job location
 - Interview type
-- Interview status
+- Drexel interview status as an import note
+- Student/employer contact instructions when present
+- Job description/posting links when present
 
-Dates, contacts, recruiter emails, and meeting links may not appear in the copied Drexel page text, so imported records stay editable.
+Dates, contacts, recruiter emails, and meeting links may not appear in the copied Drexel page text, so imported records stay editable. Date/time is only required once the record is in a scheduled pipeline step.
 
 The parser lives in `src/lib/drexelParser.ts` and is intentionally isolated so it can be adjusted when more Drexel examples are available.
 

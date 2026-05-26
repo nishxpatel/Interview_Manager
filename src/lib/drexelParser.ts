@@ -1,12 +1,9 @@
-import type { InterviewContact, InterviewDraft, InterviewStatus } from "../types/interview";
-
-const drexelStatusMap: Record<string, InterviewStatus> = {
-  accepted: "Need to email",
-  scheduled: "Date/time finalized",
-  completed: "Interview completed",
-  rejected: "Rejected/closed",
-  closed: "Rejected/closed"
-};
+import type {
+  InterviewContact,
+  InterviewDraft,
+  InterviewFormat,
+  PipelineStep
+} from "../types/interview";
 
 const clean = (value = "") =>
   value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
@@ -41,11 +38,34 @@ const parseHeader = (line: string) => {
   };
 };
 
-const mapStatus = (rawStatus?: string): InterviewStatus => {
-  if (!rawStatus) return "Need to email";
-  const lowered = rawStatus.toLowerCase();
-  const hit = Object.entries(drexelStatusMap).find(([key]) => lowered.includes(key));
-  return hit?.[1] ?? "Need to email";
+const extractUrls = (text: string) =>
+  Array.from(
+    text.matchAll(/https?:\/\/[^\s")]+/g),
+    (match) => match[0].replace(/[>\]]$/, "")
+  );
+
+const detectPipeline = (recordText: string, interviewType: string): PipelineStep => {
+  const text = `${recordText} ${interviewType}`.toLowerCase();
+  if (/employer\s+(will\s+)?contact/.test(text) || /contact\s+student/.test(text)) {
+    return "Waiting for Employer to Contact Student";
+  }
+  if (/student\s+(must\s+|should\s+|will\s+)?contact/.test(text) || /contact\s+employer/.test(text)) {
+    return "Student Needs to Contact Employer";
+  }
+  if (/employer site/.test(text) || /click\s+the\s+job\s+title/.test(text)) {
+    return "Student Needs to Contact Employer";
+  }
+  if (/interview schedule|arrange|make changes/.test(text)) return "Scheduling in Progress";
+  return "Student Needs to Contact Employer";
+};
+
+const detectFormat = (recordText: string): InterviewFormat => {
+  const text = recordText.toLowerCase();
+  if (/hybrid/.test(text)) return "Hybrid";
+  if (/zoom|teams|webex|virtual|online|video/.test(text)) return "Virtual";
+  if (/phone|call/.test(text)) return "Phone";
+  if (/in[-\s]?person|on[-\s]?site|office|campus/.test(text)) return "In-person";
+  return "Unknown";
 };
 
 const parseContacts = (lines: string[]): InterviewContact[] => {
@@ -113,13 +133,22 @@ export const parseDrexelInterviewText = (content: string): InterviewDraft[] => {
       if (statusMatch) rawStatus = clean(statusMatch[1]);
     }
 
+    const priorLines = lines.slice(Math.max(0, index - 4), index);
+    const recordText = recordLines.join("\n");
+    const links = [...extractUrls(priorLines.join("\n")), ...extractUrls(recordText)];
+    const jobDescriptionLink =
+      links.find((link) => /job|posting|display|i_job_num/i.test(link)) ?? links[0] ?? "";
+    const pipeline = detectPipeline(recordText, interviewType);
+
     results.push({
       company: header.company,
       position: header.position,
       drexelJobId: header.drexelJobId,
-      stage: "Co-op interview",
-      status: mapStatus(rawStatus),
+      pipeline,
       locationOrLink,
+      jobDescriptionLink,
+      interviewFormat: detectFormat(recordText),
+      roundLabel: "",
       notes: rawStatus
         ? `Imported from Drexel. Drexel interview status: ${rawStatus}.`
         : "Imported from Drexel.",
