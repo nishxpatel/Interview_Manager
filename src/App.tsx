@@ -86,7 +86,7 @@ const getAuthEnvironment = () => {
 
 const prefersRedirectSignIn = () => {
   const { isIOS, isSafari, isStandalone } = getAuthEnvironment();
-  return isIOS || isSafari || isStandalone;
+  return (isIOS || isSafari) && !isStandalone;
 };
 
 const shouldFallbackToRedirect = (error: unknown) => {
@@ -202,6 +202,14 @@ function App() {
     return "Local demo mode";
   }, [user]);
 
+  const showStandaloneSafariFallback = () => {
+    clearRedirectIntent();
+    setAuthPhase("idle");
+    setAuthMessage(
+      "Home-screen sign-in could not complete in iOS standalone mode. Open Interview Manager in Safari and continue there."
+    );
+  };
+
   const handleSignIn = async () => {
     setAuthError("");
     setAuthMessage("");
@@ -214,8 +222,37 @@ function App() {
     }
     const auth = firebaseAuth;
 
+    const popupSignIn = async (fallbackToRedirect: boolean) => {
+      setAuthPhase("popup");
+      setAuthMessage("Opening Google sign-in...");
+      try {
+        await signInWithPopup(auth, googleProvider);
+        setAuthMessage("");
+        setAuthPhase("idle");
+        setView("dashboard");
+      } catch (error) {
+        const { isStandalone } = getAuthEnvironment();
+        if (isStandalone) {
+          showStandaloneSafariFallback();
+          return;
+        }
+        if (fallbackToRedirect && shouldFallbackToRedirect(error)) {
+          redirectSignIn();
+          return;
+        }
+        setAuthPhase("idle");
+        setAuthMessage("");
+        setAuthError(error instanceof Error ? error.message : "Unable to sign in.");
+      }
+    };
+
     const redirectSignIn = () => {
       const { isStandalone } = getAuthEnvironment();
+      if (isStandalone) {
+        void popupSignIn(false);
+        return;
+      }
+
       setRedirectIntent();
       setAuthPhase("redirect");
       setAuthMessage("Redirecting to Google sign-in...");
@@ -238,26 +275,18 @@ function App() {
       });
     };
 
-    try {
-      if (prefersRedirectSignIn()) {
-        redirectSignIn();
-        return;
-      }
-      setAuthPhase("popup");
-      setAuthMessage("Opening Google sign-in...");
-      await signInWithPopup(auth, googleProvider);
-      setAuthMessage("");
-      setAuthPhase("idle");
-      setView("dashboard");
-    } catch (error) {
-      if (shouldFallbackToRedirect(error)) {
-        redirectSignIn();
-        return;
-      }
-      setAuthPhase("idle");
-      setAuthMessage("");
-      setAuthError(error instanceof Error ? error.message : "Unable to sign in.");
+    const { isStandalone } = getAuthEnvironment();
+    if (isStandalone) {
+      await popupSignIn(false);
+      return;
     }
+
+    if (prefersRedirectSignIn()) {
+      redirectSignIn();
+      return;
+    }
+
+    await popupSignIn(true);
   };
 
   const handleSignOut = async () => {
