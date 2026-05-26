@@ -1043,6 +1043,24 @@ textarea:focus {
   color: var(--warning-text);
 }
 
+.sync-notice {
+  background: color-mix(in srgb, var(--brand) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--brand) 28%, var(--line));
+  border-radius: 8px;
+  color: var(--brand-dark);
+  margin: 14px auto;
+  max-width: 1180px;
+  padding: 11px 13px;
+}
+
+.action-notice {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
 @media (max-width: 850px) {
   .topbar,
   .dashboard-hero,

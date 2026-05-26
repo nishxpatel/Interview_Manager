@@ -8,6 +8,8 @@ import {
   createInterview,
   deleteAllInterviews,
   deleteInterview,
+  getLocalInterviews,
+  moveLocalDemoInterviewsToCloud,
   updateInterview,
   watchInterviews
 } from "../lib/interviewStore";
@@ -30,6 +32,7 @@ import type {
 
 interface DashboardProps {
   user: AppUser;
+  hasFirebaseConfig: boolean;
 }
 
 interface DashboardFilters {
@@ -60,14 +63,18 @@ const emptyFilters: DashboardFilters = {
   source: ""
 };
 
-export function Dashboard({ user }: DashboardProps) {
+export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
   const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [localDemoCount, setLocalDemoCount] = useState(() =>
+    user.isDemo || !hasFirebaseConfig ? 0 : getLocalInterviews().length
+  );
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [selectedFocus, setSelectedFocus] = useState<MissingFieldKey | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [error, setError] = useState("");
   const [deletingAll, setDeletingAll] = useState(false);
+  const [migratingLocal, setMigratingLocal] = useState(false);
   const [filters, setFilters] = useState<DashboardFilters>(emptyFilters);
 
   useEffect(() => {
@@ -192,6 +199,26 @@ export function Dashboard({ user }: DashboardProps) {
     }
   };
 
+  const handleMoveLocalToCloud = async () => {
+    if (!localDemoCount) return;
+    const confirmed = window.confirm(
+      `Move ${localDemoCount} local demo interview entr${localDemoCount === 1 ? "y" : "ies"} to your Google account? This copies them to Firestore and clears the local demo copy on this browser.`
+    );
+    if (!confirmed) return;
+
+    setMigratingLocal(true);
+    setError("");
+    try {
+      const moved = await moveLocalDemoInterviewsToCloud(user.uid);
+      setLocalDemoCount(0);
+      window.alert(`Moved ${moved} interview entr${moved === 1 ? "y" : "ies"} to cloud sync.`);
+    } catch (migrationError) {
+      setError(migrationError instanceof Error ? migrationError.message : "Unable to move local demo data.");
+    } finally {
+      setMigratingLocal(false);
+    }
+  };
+
   const updateFilter = <K extends keyof DashboardFilters>(key: K, value: DashboardFilters[K]) => {
     setFilters((current) => ({ ...current, [key]: value }));
   };
@@ -232,6 +259,22 @@ export function Dashboard({ user }: DashboardProps) {
           Local demo mode stores data in this browser. Add Firebase environment variables for Google
           sign-in and secure cloud persistence.
         </p>
+      ) : (
+        <p className="sync-notice">
+          Cloud sync active for {user.email || user.displayName}. Interviews are stored in Firestore
+          under this Google account.
+        </p>
+      )}
+      {!user.isDemo && localDemoCount > 0 ? (
+        <div className="notice action-notice">
+          <span>
+            Found {localDemoCount} local demo interview entr{localDemoCount === 1 ? "y" : "ies"} on
+            this browser.
+          </span>
+          <button className="secondary-button" onClick={handleMoveLocalToCloud} disabled={migratingLocal}>
+            {migratingLocal ? "Moving..." : "Move local data to cloud"}
+          </button>
+        </div>
       ) : null}
       {error ? <p className="app-error">{error}</p> : null}
 

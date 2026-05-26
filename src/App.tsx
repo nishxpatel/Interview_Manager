@@ -14,11 +14,18 @@ import {
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 import { HomePage } from "./components/HomePage";
-import { hasFirebaseConfig, firebaseAuth, googleProvider } from "./lib/firebase";
+import {
+  firebaseProjectId,
+  hasFirebaseConfig,
+  missingFirebaseConfigKeys,
+  firebaseAuth,
+  googleProvider
+} from "./lib/firebase";
+import { LOCAL_DEMO_UID } from "./lib/interviewStore";
 import type { AppUser } from "./types/interview";
 
 const demoUser: AppUser = {
-  uid: "local-demo-user",
+  uid: LOCAL_DEMO_UID,
   displayName: "Local Demo",
   email: "demo@interview-manager.local",
   isDemo: true
@@ -35,7 +42,9 @@ const getInitialTheme = (): ThemePreference => {
 
 function App() {
   const [user, setUser] = useState<AppUser | null>(() => {
-    return window.localStorage.getItem("interview-manager:demo-user") ? demoUser : null;
+    return !hasFirebaseConfig && window.localStorage.getItem("interview-manager:demo-user")
+      ? demoUser
+      : null;
   });
   const [authLoading, setAuthLoading] = useState(hasFirebaseConfig);
   const [authError, setAuthError] = useState("");
@@ -64,10 +73,30 @@ function App() {
     });
   }, []);
 
-  const authModeLabel = useMemo(
-    () => (hasFirebaseConfig ? "Google + Firestore" : "Local demo mode"),
-    []
-  );
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const mode = hasFirebaseConfig ? "Firebase mode" : "Local demo mode";
+    console.info(`[Interview Manager] ${mode}`);
+    if (hasFirebaseConfig) console.info(`[Interview Manager] Firebase project: ${firebaseProjectId}`);
+    if (!hasFirebaseConfig) {
+      console.info(
+        `[Interview Manager] Missing Firebase config keys: ${missingFirebaseConfigKeys.join(", ")}`
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    if (import.meta.env.DEV && user) {
+      console.info(`[Interview Manager] Current user UID: ${user.uid}`);
+    }
+  }, [user]);
+
+  const authModeLabel = useMemo(() => {
+    if (user?.isDemo) return "Local demo mode";
+    if (user && hasFirebaseConfig) return "Cloud sync active";
+    if (hasFirebaseConfig) return "Sign in for cloud sync";
+    return "Local demo mode";
+  }, [user]);
 
   const handleSignIn = async () => {
     setAuthError("");
@@ -155,7 +184,7 @@ function App() {
       {authError ? <p className="app-error">{authError}</p> : null}
 
       {user && view === "dashboard" ? (
-        <Dashboard user={user} />
+        <Dashboard user={user} hasFirebaseConfig={hasFirebaseConfig} />
       ) : (
         <HomePage
           authLoading={authLoading}

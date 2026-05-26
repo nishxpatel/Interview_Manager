@@ -19,6 +19,10 @@ const firebaseConfig = {
 };
 
 export const hasFirebaseConfig = Object.values(firebaseConfig).every(Boolean);
+export const missingFirebaseConfigKeys = Object.entries(firebaseConfig)
+  .filter(([, value]) => !value)
+  .map(([key]) => key);
+export const firebaseProjectId = firebaseConfig.projectId ?? "";
 
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;

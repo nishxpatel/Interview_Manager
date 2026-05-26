@@ -16,9 +16,10 @@ import {
 import type { Interview, InterviewDraft } from "../types/interview";
 import { firestore } from "./firebase";
 import { sanitizeObjectForFirestore } from "./firestoreSanitizer";
-import { normalizeInterview, prepareDraftForSave } from "./interviewUtils";
+import { interviewToDraft, normalizeInterview, prepareDraftForSave } from "./interviewUtils";
 
 const localKey = (uid: string) => `interview-manager:${uid}:interviews`;
+export const LOCAL_DEMO_UID = "local-demo-user";
 
 const now = () => new Date().toISOString();
 
@@ -74,6 +75,14 @@ const saveLocal = (uid: string, interviews: Interview[]) => {
   window.dispatchEvent(new CustomEvent(`interviews-updated:${uid}`, { detail: interviews }));
 };
 
+export const getLocalInterviews = (uid: string = LOCAL_DEMO_UID): Interview[] =>
+  fromStored(window.localStorage.getItem(localKey(uid)));
+
+export const clearLocalInterviews = (uid: string = LOCAL_DEMO_UID) => {
+  window.localStorage.removeItem(localKey(uid));
+  window.dispatchEvent(new CustomEvent(`interviews-updated:${uid}`, { detail: [] }));
+};
+
 export const createInterview = async (uid: string, draft: InterviewDraft) => {
   const preparedDraft = prepareDraftForSave(draft);
   if (!firestore) {
@@ -94,6 +103,18 @@ export const createInterview = async (uid: string, draft: InterviewDraft) => {
     updatedAt: serverTimestamp()
   });
   return docRef.id;
+};
+
+export const moveLocalDemoInterviewsToCloud = async (uid: string) => {
+  if (!firestore) throw new Error("Firebase is not configured. Cloud sync is unavailable.");
+
+  const localInterviews = getLocalInterviews(LOCAL_DEMO_UID);
+  await Promise.all(
+    localInterviews.map((interview) => createInterview(uid, interviewToDraft(interview)))
+  );
+  clearLocalInterviews(LOCAL_DEMO_UID);
+  window.localStorage.removeItem("interview-manager:demo-user");
+  return localInterviews.length;
 };
 
 export const updateInterview = async (
