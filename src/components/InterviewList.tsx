@@ -134,7 +134,7 @@ function InterviewCard({
 
       <div className="interview-summary-grid">
         <span className="summary-item">
-          <strong>Location/link</strong>
+          <strong>Location</strong>
           {normalized.locationOrLink ? (
             normalized.locationOrLink.startsWith("http") ? (
               <a href={normalized.locationOrLink} target="_blank" rel="noreferrer">

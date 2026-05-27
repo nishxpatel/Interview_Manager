@@ -416,12 +416,7 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
           Local demo mode stores data in this browser. Add Firebase environment variables for Google
           sign-in and secure cloud persistence.
         </p>
-      ) : (
-        <p className="sync-notice">
-          Cloud sync active for {user.email || user.displayName}. Interviews are stored in Firestore
-          under this Google account.
-        </p>
-      )}
+      ) : null}
       {!user.isDemo && localDemoCount > 0 ? (
         <div className="notice action-notice">
           <span>
@@ -579,7 +574,7 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
             </select>
           </label>
           <label className="field">
-            <span>Location/link</span>
+            <span>Location</span>
             <input
               value={filters.location}
               onChange={(event) => updateFilter("location", event.target.value)}
