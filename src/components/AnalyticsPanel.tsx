@@ -30,14 +30,14 @@ export function AnalyticsPanel({ interviews }: AnalyticsPanelProps) {
         <strong>{analytics.total}</strong>
       </article>
       <article className="stat-card">
-        <CalendarDays size={21} />
-        <span>Upcoming scheduled</span>
-        <strong>{analytics.upcoming}</strong>
-      </article>
-      <article className="stat-card">
         <Mail size={21} />
         <span>Communication needed</span>
         <strong>{analytics.communicationNeeded}</strong>
+      </article>
+      <article className="stat-card">
+        <CalendarDays size={21} />
+        <span>Upcoming scheduled</span>
+        <strong>{analytics.upcoming}</strong>
       </article>
       <article className="stat-card">
         <CircleCheck size={21} />
