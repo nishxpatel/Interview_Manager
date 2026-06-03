@@ -28,9 +28,12 @@ export const createBlankLink = (): InterviewLink => ({
   type: "other"
 });
 
-const trimValue = (value?: string | null) => value?.trim() ?? "";
+const textValue = (value: unknown) => (typeof value === "string" ? value : value == null ? "" : String(value));
+const trimValue = (value: unknown) => textValue(value).trim();
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
 
-const hasContactValue = (contact: Partial<InterviewContact>) =>
+const hasContactValue = (contact: Record<string, unknown>) =>
   Boolean(
     trimValue(contact.name) ||
       trimValue(contact.title) ||
@@ -39,10 +42,10 @@ const hasContactValue = (contact: Partial<InterviewContact>) =>
       trimValue(contact.notes)
   );
 
-const hasLinkValue = (link: Partial<InterviewLink>) => Boolean(trimValue(link.url));
+const hasLinkValue = (link: Record<string, unknown>) => Boolean(trimValue(link.url));
 
-const inferLinkType = (url: string, label = ""): InterviewLink["type"] => {
-  const text = `${url} ${label}`.toLowerCase();
+const inferLinkType = (url: unknown, label: unknown = ""): InterviewLink["type"] => {
+  const text = `${textValue(url)} ${textValue(label)}`.toLowerCase();
   if (/job|posting|display|i_job_num/.test(text)) return "job-description";
   if (/interview|schedule/.test(text)) return "interview";
   if (/employer|company/.test(text)) return "employer";
@@ -69,8 +72,8 @@ const withoutLegacyFields = <
   return current;
 };
 
-const normalizeNotes = (notes?: string, source?: Interview["source"]) => {
-  const value = notes ?? "";
+const normalizeNotes = (notes?: unknown, source?: Interview["source"]) => {
+  const value = textValue(notes);
   const trimmed = value.trim();
   if (
     source === "drexel-import" &&
@@ -109,15 +112,15 @@ const isLegacyWaitingReplyPipeline = (value?: string) =>
 type LegacyInterviewRecord = Partial<Omit<Interview, "pipeline">> & { pipeline?: string };
 
 const mapLegacyThankYouEmailSent = (record: LegacyInterviewRecord) => {
-  const status = record.status?.toLowerCase() ?? "";
+  const status = textValue(record.status).toLowerCase();
   return Boolean(record.thankYouEmailSent || isLegacyFollowUpPipeline(record.pipeline) || status.includes("follow-up"));
 };
 
-export const normalizeInterviewFormat = (value?: string | null): InterviewFormat => {
+export const normalizeInterviewFormat = (value?: unknown): InterviewFormat => {
   if (!value) return "Not set";
   if (INTERVIEW_FORMATS.includes(value as InterviewFormat)) return value as InterviewFormat;
 
-  const format = value.toLowerCase();
+  const format = textValue(value).toLowerCase();
   if (format.includes("teams")) return "Teams";
   if (format.includes("zoom")) return "Zoom";
   if (format.includes("phone") || format.includes("call")) return "Phone";
@@ -144,8 +147,8 @@ export const mapLegacyPipeline = (record: LegacyInterviewRecord): PipelineStep =
   ) {
     return hasDate ? "Interview Scheduled" : "Waiting for Employer Reply";
   }
-  const status = record.status?.toLowerCase() ?? "";
-  const stage = record.stage?.toLowerCase() ?? "";
+  const status = textValue(record.status).toLowerCase();
+  const stage = textValue(record.stage).toLowerCase();
 
   if (status.includes("need to email")) return "Make Contact";
   if (status.includes("email sent") || status.includes("waiting")) return "Waiting for Employer Reply";
@@ -163,16 +166,19 @@ export const mapLegacyPipeline = (record: LegacyInterviewRecord): PipelineStep =
 };
 
 export const normalizeContacts = (interview: Partial<InterviewDraft>): InterviewContact[] => {
-  const contacts = (interview.contacts ?? []).filter(hasContactValue);
+  const contactsValue = (interview as { contacts?: unknown }).contacts;
+  const rawContacts: Record<string, unknown>[] = Array.isArray(contactsValue)
+    ? contactsValue.filter(isObjectRecord)
+    : [];
+  const contacts = rawContacts.filter(hasContactValue);
   if (contacts.length) {
     return contacts.map((contact) => ({
-      ...contact,
-      id: contact.id || createId(),
-      name: contact.name ?? "",
-      title: contact.title ?? "",
-      email: contact.email ?? "",
-      phone: contact.phone ?? "",
-      notes: contact.notes ?? ""
+      id: trimValue(contact.id) || createId(),
+      name: textValue(contact.name),
+      title: textValue(contact.title),
+      email: textValue(contact.email),
+      phone: textValue(contact.phone),
+      notes: textValue(contact.notes)
     }));
   }
 
@@ -193,12 +199,22 @@ export const normalizeContacts = (interview: Partial<InterviewDraft>): Interview
 };
 
 export const normalizeLinks = (interview: Partial<InterviewDraft>): InterviewLink[] => {
-  const links = (interview.links ?? []).filter(hasLinkValue).map((link) => ({
-    ...link,
-    id: link.id || createId(),
+  const linksValue = (interview as { links?: unknown }).links;
+  const rawLinks: Record<string, unknown>[] = Array.isArray(linksValue)
+    ? linksValue.filter(isObjectRecord)
+    : [];
+  const links = rawLinks.filter(hasLinkValue).map((link) => ({
+    id: trimValue(link.id) || createId(),
     label: trimValue(link.label) || "Link",
     url: trimValue(link.url),
-    type: link.type ?? inferLinkType(link.url, link.label)
+    type:
+      link.type === "job-description" ||
+      link.type === "posting" ||
+      link.type === "interview" ||
+      link.type === "employer" ||
+      link.type === "other"
+        ? link.type
+        : inferLinkType(link.url, link.label)
   }));
 
   if (trimValue(interview.jobDescriptionLink)) {
@@ -225,20 +241,29 @@ export const normalizeInterview = (interview: Interview): Interview => {
   const current = withoutLegacyFields(interview);
   const pipeline = mapLegacyPipeline(interview);
   const jobDescriptionLink =
-    interview.jobDescriptionLink ??
-    links.find((link) => link.type === "job-description" || link.type === "posting")?.url ??
-    "";
+    trimValue(interview.jobDescriptionLink) ||
+    (links.find((link) => link.type === "job-description" || link.type === "posting")?.url ?? "");
   return {
     ...current,
+    company: textValue(interview.company),
+    position: textValue(interview.position),
     pipeline,
+    interviewDateTime: textValue(interview.interviewDateTime),
     interviewFormat: normalizeInterviewFormat(interview.interviewFormat),
-    roundLabel: interview.roundLabel ?? "",
+    roundLabel: textValue(interview.roundLabel),
     thankYouEmailSent: pipeline === "Interview Completed" ? mapLegacyThankYouEmailSent(interview) : false,
+    locationOrLink: textValue(interview.locationOrLink),
     jobDescriptionLink,
     links,
     contacts,
     notes: normalizeNotes(interview.notes, interview.source),
-    contactPerson: interview.contactPerson ?? contacts[0]?.name ?? ""
+    questions: textValue(interview.questions),
+    source: interview.source === "drexel-import" ? "drexel-import" : "manual",
+    drexelJobId: textValue(interview.drexelJobId),
+    jobLength: textValue(interview.jobLength),
+    contactPerson: trimValue(interview.contactPerson) || (contacts[0]?.name ?? ""),
+    createdAt: textValue(interview.createdAt),
+    updatedAt: textValue(interview.updatedAt)
   };
 };
 

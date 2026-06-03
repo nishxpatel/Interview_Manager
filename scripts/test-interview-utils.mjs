@@ -141,6 +141,43 @@ try {
   assert.equal(legacyFollowUp.pipeline, "Interview Completed");
   assert.equal(legacyFollowUp.thankYouEmailSent, true);
 
+  const malformed = normalizeInterview({
+    id: "malformed",
+    company: undefined,
+    position: null,
+    pipeline: "Interview Scheduled",
+    status: { value: "Date/time finalized" },
+    stage: ["Phone screen"],
+    interviewFormat: 123,
+    contactPerson: 456,
+    contacts: "not-an-array",
+    locationOrLink: null,
+    jobDescriptionLink: undefined,
+    links: [
+      null,
+      "not-a-link",
+      { id: 123, label: null, url: " https://example.com/malformed-job " }
+    ],
+    notes: { source: "legacy" },
+    questions: undefined,
+    drexelJobId: 789,
+    jobLength: null,
+    createdAt: undefined,
+    updatedAt: null
+  });
+
+  assert.equal(malformed.company, "");
+  assert.equal(malformed.position, "");
+  assert.equal(malformed.contactPerson, "456");
+  assert.equal(malformed.contacts.length, 1);
+  assert.equal(malformed.contacts[0].name, "456");
+  assert.equal(malformed.links.length, 1);
+  assert.equal(malformed.links[0].id, "123");
+  assert.equal(malformed.links[0].url, "https://example.com/malformed-job");
+  assert.equal(malformed.notes, "[object Object]");
+  assert.equal(malformed.drexelJobId, "789");
+  assert.equal(malformed.jobLength, "");
+
   const originalCryptoDescriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
   Object.defineProperty(globalThis, "crypto", {
     configurable: true,
