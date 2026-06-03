@@ -12,7 +12,7 @@ GitHub repository: <https://github.com/nishxpatel/Interview_Manager>
 - Per-user interview storage in Cloud Firestore
 - Add, edit, delete, and update interview records
 - Track company, position, pipeline step, date/time, format, contacts, location/link, job description link, questions, and notes
-- Pipeline analytics for total, upcoming scheduled interviews, communication-needed records, completed interviews, done/withdrawn records, and active records
+- Pipeline analytics for total, upcoming scheduled interviews, communication-needed records, completed interviews, withdrawn records, and active records
 - Drexel import tool for pasted content from "Maintain your Co-Op Interview Requests"
 - Responsive React interface for desktop and mobile
 - Lightweight PWA metadata for Chromium install prompts and iPhone Safari "Add to Home Screen"

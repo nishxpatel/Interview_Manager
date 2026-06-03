@@ -31,7 +31,7 @@ export const getAnalytics = (interviews: Interview[]) => {
     communicationNeeded: normalized.filter((item) => isCommunicationNeededPipeline(item.pipeline))
       .length,
     completed: normalized.filter((item) => item.pipeline === "Interview Completed").length,
-    done: normalized.filter((item) => isDonePipeline(item.pipeline)).length,
+    withdrawn: normalized.filter((item) => item.pipeline === "Withdrawn").length,
     active: normalized.filter((item) => !isDonePipeline(item.pipeline)).length
   };
 };

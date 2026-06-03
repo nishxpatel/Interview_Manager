@@ -1,4 +1,4 @@
-import { CalendarDays, CircleCheck, Mail, Target, Timer } from "lucide-react";
+import { CalendarDays, CircleCheck, CircleX, Mail, Target } from "lucide-react";
 import { getAnalytics } from "../lib/analytics";
 import { getCountdownText } from "../lib/interviewUtils";
 import type { Interview } from "../types/interview";
@@ -46,9 +46,9 @@ export function AnalyticsPanel({ interviews }: AnalyticsPanelProps) {
         <strong>{analytics.completed}</strong>
       </article>
       <article className="stat-card">
-        <Timer size={21} />
-        <span>Done/withdrawn</span>
-        <strong>{analytics.done}</strong>
+        <CircleX size={21} />
+        <span>Withdrawn</span>
+        <strong>{analytics.withdrawn}</strong>
       </article>
 
       <article className="pipeline-card">
