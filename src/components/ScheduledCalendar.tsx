@@ -43,7 +43,8 @@ const toDateKey = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-const parseInterviewDate = (interview: Interview) => {
+const parseInterviewDate = (interview?: Interview | null) => {
+  if (!interview) return null;
   if (!interview.interviewDateTime) return null;
   const date = new Date(interview.interviewDateTime);
   return Number.isNaN(date.getTime()) ? null : date;
