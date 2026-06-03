@@ -547,6 +547,146 @@ h1 {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+.timeline-section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-top: 18px;
+  padding: 20px;
+}
+
+.pipeline-timeline {
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(7, minmax(165px, 1fr));
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.timeline-stage {
+  display: grid;
+  gap: 10px;
+  min-width: 165px;
+  padding: 0 10px 0 0;
+  position: relative;
+}
+
+.timeline-stage-marker {
+  align-items: center;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  min-height: 28px;
+}
+
+.timeline-stage-marker span {
+  align-items: center;
+  background: color-mix(in srgb, var(--brand) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--brand) 34%, var(--line));
+  border-radius: 999px;
+  color: var(--brand);
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.timeline-stage-marker i {
+  background: linear-gradient(90deg, var(--brand), var(--dragon));
+  display: block;
+  height: 3px;
+}
+
+.timeline-stage-header {
+  align-items: start;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 32px minmax(0, 1fr);
+}
+
+.timeline-stage-header span {
+  align-items: center;
+  background: var(--ink);
+  border-radius: 999px;
+  color: var(--surface);
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 800;
+  height: 28px;
+  justify-content: center;
+  min-width: 28px;
+  padding: 0 8px;
+}
+
+.timeline-stage-header h3 {
+  font-size: 0.92rem;
+  line-height: 1.2;
+  margin: 2px 0 0;
+}
+
+.timeline-next {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 5px;
+  min-height: 22px;
+}
+
+.timeline-interviews {
+  display: grid;
+  gap: 7px;
+}
+
+.timeline-interview-chip,
+.timeline-empty,
+.timeline-more {
+  border-radius: 8px;
+  min-height: 48px;
+  padding: 8px 9px;
+}
+
+.timeline-interview-chip {
+  background: var(--surface-strong);
+  border: 1px solid var(--subtle);
+  display: grid;
+  gap: 1px;
+}
+
+.timeline-interview-chip strong,
+.timeline-interview-chip small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-interview-chip strong {
+  color: var(--ink);
+  font-size: 0.83rem;
+}
+
+.timeline-interview-chip small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.timeline-empty,
+.timeline-more {
+  align-items: center;
+  background: var(--surface-strong);
+  border: 1px dashed var(--subtle);
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.8rem;
+}
+
+.timeline-more {
+  border-style: solid;
+  font-weight: 700;
+  min-height: 34px;
+}
+
 .stat-card {
   display: grid;
   gap: 8px;
@@ -726,6 +866,26 @@ h1 {
   grid-column: 1 / -1;
 }
 
+.checkbox-field,
+.thank-you-check {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+}
+
+.checkbox-field {
+  align-self: end;
+  min-height: 42px;
+}
+
+.checkbox-field input,
+.thank-you-check input {
+  accent-color: var(--brand);
+  flex: 0 0 auto;
+  min-height: 18px;
+  width: 18px;
+}
+
 .field span,
 .pipeline-select span {
   color: var(--chip-text);
@@ -845,6 +1005,25 @@ textarea:focus {
   font-weight: 700;
   min-width: 0;
   width: 100%;
+}
+
+.card-status-controls {
+  display: grid;
+  gap: 10px;
+  justify-self: end;
+  max-width: 420px;
+  width: 100%;
+}
+
+.thank-you-check {
+  background: var(--chip-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--chip-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 8px 10px;
 }
 
 .missing-fields {
@@ -1125,8 +1304,16 @@ textarea:focus {
 .contact-form-title {
   align-items: center;
   display: flex;
+  gap: 10px;
   justify-content: space-between;
   margin-bottom: 10px;
+}
+
+.row-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
 }
 
 .contact-grid {
@@ -1264,6 +1451,11 @@ textarea:focus {
     max-width: none;
   }
 
+  .card-status-controls {
+    justify-self: stretch;
+    max-width: none;
+  }
+
   .feature-grid,
   .analytics-grid,
   .form-grid,
@@ -1289,6 +1481,14 @@ textarea:focus {
 
   .scheduled-row {
     grid-template-columns: 1fr;
+  }
+
+  .timeline-section {
+    padding: 16px;
+  }
+
+  .pipeline-timeline {
+    grid-template-columns: repeat(7, minmax(220px, 1fr));
   }
 }
 

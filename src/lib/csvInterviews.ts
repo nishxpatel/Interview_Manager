@@ -8,6 +8,7 @@ export const INTERVIEW_CSV_HEADERS = [
   "interviewDateTime",
   "interviewFormat",
   "roundLabel",
+  "thankYouEmailSent",
   "contactPerson",
   "contacts",
   "locationOrLink",
@@ -21,6 +22,8 @@ export const INTERVIEW_CSV_HEADERS = [
 ] as const;
 
 type CsvHeader = (typeof INTERVIEW_CSV_HEADERS)[number];
+
+const OPTIONAL_CSV_HEADERS: CsvHeader[] = ["thankYouEmailSent"];
 
 const csvEscape = (value: unknown) => {
   const text = String(value ?? "");
@@ -93,6 +96,7 @@ export const exportInterviewsToCsv = (interviews: Interview[]) => {
       interviewDateTime: draft.interviewDateTime ?? "",
       interviewFormat: draft.interviewFormat ?? "Not set",
       roundLabel: draft.roundLabel ?? "",
+      thankYouEmailSent: draft.thankYouEmailSent ? "true" : "false",
       contactPerson: draft.contactPerson ?? "",
       contacts: JSON.stringify(draft.contacts ?? []),
       locationOrLink: draft.locationOrLink ?? "",
@@ -117,7 +121,9 @@ export const importInterviewsFromCsv = (csv: string): InterviewDraft[] => {
   const headers = rows[0].map((header, index) =>
     (index === 0 ? header.replace(/^\uFEFF/, "") : header).trim()
   );
-  const missingHeaders = INTERVIEW_CSV_HEADERS.filter((header) => !headers.includes(header));
+  const missingHeaders = INTERVIEW_CSV_HEADERS.filter(
+    (header) => !OPTIONAL_CSV_HEADERS.includes(header) && !headers.includes(header)
+  );
   if (missingHeaders.length) {
     throw new Error(`CSV is missing required column${missingHeaders.length === 1 ? "" : "s"}: ${missingHeaders.join(", ")}`);
   }
@@ -129,14 +135,18 @@ export const importInterviewsFromCsv = (csv: string): InterviewDraft[] => {
       values.get("jobDescriptionLink")?.trim() ||
       links.find((link) => link.type === "job-description" || link.type === "posting")?.url ||
       "";
+    const pipeline = values.get("pipeline") || "Student Needs to Contact Employer";
 
     return {
       company: values.get("company") ?? "",
       position: values.get("position") ?? "",
-      pipeline: (values.get("pipeline") || "Student Needs to Contact Employer") as InterviewDraft["pipeline"],
+      pipeline: pipeline as InterviewDraft["pipeline"],
       interviewDateTime: values.get("interviewDateTime") ?? "",
       interviewFormat: (values.get("interviewFormat") || "Not set") as InterviewDraft["interviewFormat"],
       roundLabel: values.get("roundLabel") ?? "",
+      thankYouEmailSent:
+        /^(true|yes|1)$/i.test(values.get("thankYouEmailSent")?.trim() ?? "") ||
+        pipeline === "Follow-Up Sent / Done",
       contactPerson: values.get("contactPerson") ?? "",
       contacts: parseJsonArray(values.get("contacts") ?? "", []),
       locationOrLink: values.get("locationOrLink") ?? "",

@@ -84,18 +84,31 @@ export const isScheduledPipeline = (pipeline?: string) =>
   SCHEDULED_PIPELINE_STEPS.includes(pipeline as PipelineStep);
 
 export const isDonePipeline = (pipeline?: string) =>
-  pipeline === "Follow-Up Sent / Done" || pipeline === "Withdrawn";
+  pipeline === "Interview Completed" || pipeline === "Withdrawn";
 
 export const isCommunicationNeededPipeline = (pipeline?: string) =>
-  pipeline === "Student Needs to Contact Employer" ||
-  pipeline === "Waiting for Employer to Contact Student" ||
-  pipeline === "Waiting for Employer Response";
+  pipeline === "Make Contact" || pipeline === "Waiting for Employer Reply";
 
 export const isContactRequiredPipeline = (pipeline?: string) =>
-  pipeline === "Student Needs to Contact Employer" || pipeline === "Waiting for Employer Response";
+  pipeline === "Make Contact" || pipeline === "Waiting for Employer Reply";
 
 const isPipelineStep = (value?: string): value is PipelineStep =>
   PIPELINE_STEPS.includes(value as PipelineStep);
+
+const isLegacyFollowUpPipeline = (value?: string) => value === "Follow-Up Sent / Done";
+
+const isLegacyMakeContactPipeline = (value?: string) =>
+  value === "Student Needs to Contact Employer" || value === "Waiting for Employer to Contact Student";
+
+const isLegacyWaitingReplyPipeline = (value?: string) =>
+  value === "Waiting for Employer Response" || value === "Scheduling in Progress";
+
+type LegacyInterviewRecord = Partial<Omit<Interview, "pipeline">> & { pipeline?: string };
+
+const mapLegacyThankYouEmailSent = (record: LegacyInterviewRecord) => {
+  const status = record.status?.toLowerCase() ?? "";
+  return Boolean(record.thankYouEmailSent || isLegacyFollowUpPipeline(record.pipeline) || status.includes("follow-up"));
+};
 
 export const normalizeInterviewFormat = (value?: string | null): InterviewFormat => {
   if (!value) return "Not set";
@@ -116,31 +129,34 @@ export const normalizeInterviewFormat = (value?: string | null): InterviewFormat
   return "Other";
 };
 
-export const mapLegacyPipeline = (record: Partial<Interview>): PipelineStep => {
+export const mapLegacyPipeline = (record: LegacyInterviewRecord): PipelineStep => {
   const hasDate = Boolean(record.interviewDateTime);
   if (isPipelineStep(record.pipeline)) return record.pipeline;
+  if (isLegacyMakeContactPipeline(record.pipeline)) return "Make Contact";
+  if (isLegacyWaitingReplyPipeline(record.pipeline)) return "Waiting for Employer Reply";
+  if (isLegacyFollowUpPipeline(record.pipeline)) return "Interview Completed";
   if (
     record.pipeline === "Screening Round Scheduled" ||
     record.pipeline === "Additional Interview Round Scheduled"
   ) {
-    return hasDate ? "Interview Scheduled" : "Waiting for Employer Response";
+    return hasDate ? "Interview Scheduled" : "Waiting for Employer Reply";
   }
   const status = record.status?.toLowerCase() ?? "";
   const stage = record.stage?.toLowerCase() ?? "";
 
-  if (status.includes("need to email")) return "Student Needs to Contact Employer";
-  if (status.includes("email sent") || status.includes("waiting")) return "Waiting for Employer Response";
+  if (status.includes("need to email")) return "Make Contact";
+  if (status.includes("email sent") || status.includes("waiting")) return "Waiting for Employer Reply";
   if (status.includes("date/time finalized")) return "Interview Scheduled";
   if (status.includes("interview completed")) return "Interview Completed";
-  if (status.includes("follow-up")) return "Follow-Up Sent / Done";
+  if (status.includes("follow-up")) return "Interview Completed";
   if (status.includes("rejected") || status.includes("closed")) return "Withdrawn";
-  if (stage.includes("phone")) return hasDate ? "Interview Scheduled" : "Waiting for Employer Response";
+  if (stage.includes("phone")) return hasDate ? "Interview Scheduled" : "Waiting for Employer Reply";
   if (stage.includes("technical") || stage.includes("behavioral") || stage.includes("final")) {
-    return hasDate ? "Interview Scheduled" : "Waiting for Employer Response";
+    return hasDate ? "Interview Scheduled" : "Waiting for Employer Reply";
   }
   if (hasDate) return "Interview Scheduled";
 
-  return "Student Needs to Contact Employer";
+  return "Make Contact";
 };
 
 export const normalizeContacts = (interview: Partial<InterviewDraft>): InterviewContact[] => {
@@ -208,6 +224,7 @@ export const normalizeInterview = (interview: Interview): Interview => {
     pipeline: mapLegacyPipeline(interview),
     interviewFormat: normalizeInterviewFormat(interview.interviewFormat),
     roundLabel: interview.roundLabel ?? "",
+    thankYouEmailSent: mapLegacyThankYouEmailSent(interview),
     jobDescriptionLink,
     links,
     contacts,
@@ -225,6 +242,7 @@ export const interviewToDraft = (interview: Interview): InterviewDraft => {
     interviewDateTime: normalized.interviewDateTime ?? "",
     interviewFormat: normalizeInterviewFormat(normalized.interviewFormat),
     roundLabel: normalized.roundLabel ?? "",
+    thankYouEmailSent: normalized.thankYouEmailSent ?? false,
     contactPerson: normalized.contactPerson ?? normalized.contacts?.[0]?.name ?? "",
     contacts: normalized.contacts ?? [],
     locationOrLink: normalized.locationOrLink ?? "",
@@ -244,8 +262,9 @@ export const prepareDraftForSave = (draft: InterviewDraft): InterviewDraft => {
   const current = withoutLegacyFields(draft);
   return {
     ...current,
-    pipeline: mapLegacyPipeline(draft as Partial<Interview>),
+    pipeline: mapLegacyPipeline(draft as LegacyInterviewRecord),
     interviewFormat: normalizeInterviewFormat(draft.interviewFormat),
+    thankYouEmailSent: mapLegacyThankYouEmailSent(draft as LegacyInterviewRecord),
     contacts,
     links,
     notes: normalizeNotes(draft.notes, draft.source),

@@ -32,6 +32,7 @@ try {
       interviewDateTime: "2026-06-01T10:00",
       interviewFormat: "Teams",
       roundLabel: "First round",
+      thankYouEmailSent: true,
       contactPerson: "Avery Recruiter",
       contacts: [
         {
@@ -65,9 +66,14 @@ try {
   assert.equal(draft.position, "Data \"Platform\" Co-op");
   assert.equal(draft.pipeline, "Interview Scheduled");
   assert.equal(draft.interviewFormat, "Teams");
+  assert.equal(draft.thankYouEmailSent, true);
   assert.equal(draft.contacts?.[0]?.email, "avery@example.com");
   assert.equal(draft.links?.[0]?.url, "https://example.com/job");
   assert.equal(draft.notes, "Bring portfolio\nAsk about team");
+
+  const oldCsv = csv.replace("thankYouEmailSent,", "").replace(",true,Avery Recruiter", ",Avery Recruiter");
+  const [oldDraft] = importInterviewsFromCsv(oldCsv);
+  assert.equal(oldDraft.thankYouEmailSent, false);
 } finally {
   await rm(outdir, { recursive: true, force: true });
 }

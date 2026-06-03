@@ -14,6 +14,7 @@ import { AnalyticsPanel } from "./AnalyticsPanel";
 import { DrexelImport } from "./DrexelImport";
 import { InterviewForm } from "./InterviewForm";
 import { InterviewList } from "./InterviewList";
+import { PipelineTimeline } from "./PipelineTimeline";
 import {
   createInterview,
   deleteAllInterviews,
@@ -63,6 +64,8 @@ interface DashboardFilters {
   source: string;
 }
 
+const defaultSort = "pipeline-asc";
+
 const emptyFilters: DashboardFilters = {
   search: "",
   company: "",
@@ -75,11 +78,12 @@ const emptyFilters: DashboardFilters = {
   contact: "",
   format: "",
   location: "",
-  sort: "updated-desc",
+  sort: defaultSort,
   source: ""
 };
 
 const sortOptions = [
+  ["pipeline-asc", "Pipeline step"],
   ["updated-desc", "Recently updated"],
   ["updated-asc", "Least recently updated"],
   ["created-desc", "Newest added"],
@@ -90,7 +94,6 @@ const sortOptions = [
   ["company-desc", "Company Z-A"],
   ["position-asc", "Position A-Z"],
   ["position-desc", "Position Z-A"],
-  ["pipeline-asc", "Pipeline step"],
   ["missing-desc", "Most missing fields"],
   ["source-asc", "Source"]
 ] as const;
@@ -147,6 +150,7 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
         normalized.position,
         normalized.pipeline,
         normalized.interviewFormat,
+        normalized.thankYouEmailSent ? "thank-you email sent" : "",
         normalized.roundLabel,
         normalized.locationOrLink,
         normalized.jobDescriptionLink,
@@ -162,7 +166,7 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
       const interviewDate = normalized.interviewDateTime
         ? new Date(normalized.interviewDateTime)
         : null;
-      const isCompleted = isDonePipeline(normalized.pipeline) || normalized.pipeline === "Interview Completed";
+      const isCompleted = isDonePipeline(normalized.pipeline);
       const isUpcoming = Boolean(interviewDate && interviewDate >= now);
       const missingFields = getMissingFields(normalized);
 
@@ -242,7 +246,7 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
     key === "activity" || key === "missing"
       ? value !== "all"
       : key === "sort"
-        ? value !== "updated-desc"
+        ? value !== defaultSort
         : Boolean(value)
   );
 
@@ -430,6 +434,8 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
       ) : null}
       {error ? <p className="app-error">{error}</p> : null}
 
+      <PipelineTimeline interviews={interviews} />
+
       <AnalyticsPanel interviews={interviews} />
 
       <div className="table-section">
@@ -608,6 +614,12 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
             updateInterview(user.uid, interview.id, {
               ...interviewToDraft(interview),
               pipeline: pipeline as PipelineStep
+            })
+          }
+          onThankYouEmailChange={(interview, thankYouEmailSent) =>
+            updateInterview(user.uid, interview.id, {
+              ...interviewToDraft(interview),
+              thankYouEmailSent
             })
           }
         />

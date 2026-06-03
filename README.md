@@ -132,7 +132,7 @@ The parser lives in `src/lib/drexelParser.ts` and is intentionally isolated so i
 The dashboard can export all current interview records as CSV. The CSV import button expects the exact schema produced by that export:
 
 ```text
-company,position,pipeline,interviewDateTime,interviewFormat,roundLabel,contactPerson,contacts,locationOrLink,jobDescriptionLink,links,notes,questions,source,drexelJobId,jobLength
+company,position,pipeline,interviewDateTime,interviewFormat,roundLabel,thankYouEmailSent,contactPerson,contacts,locationOrLink,jobDescriptionLink,links,notes,questions,source,drexelJobId,jobLength
 ```
 
 The `contacts` and `links` columns are JSON arrays so multiple contacts and links can round-trip without losing data. Importing a CSV adds new records; it does not update or delete existing records.

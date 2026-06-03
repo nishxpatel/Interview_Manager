@@ -1,11 +1,8 @@
 export const PIPELINE_STEPS = [
-  "Student Needs to Contact Employer",
-  "Waiting for Employer to Contact Student",
-  "Waiting for Employer Response",
-  "Scheduling in Progress",
+  "Make Contact",
+  "Waiting for Employer Reply",
   "Interview Scheduled",
   "Interview Completed",
-  "Follow-Up Sent / Done",
   "Withdrawn"
 ] as const;
 
@@ -43,6 +40,7 @@ export interface Interview {
   interviewDateTime?: string;
   interviewFormat?: InterviewFormat;
   roundLabel?: string;
+  thankYouEmailSent?: boolean;
   contactPerson?: string;
   contacts?: InterviewContact[];
   locationOrLink?: string;

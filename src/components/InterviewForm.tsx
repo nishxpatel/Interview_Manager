@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Plus, Save, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Save, Trash2, X } from "lucide-react";
 import {
   INTERVIEW_FORMATS,
   PIPELINE_STEPS,
@@ -21,10 +21,11 @@ import {
 const blankDraft: InterviewDraft = {
   company: "",
   position: "",
-  pipeline: "Student Needs to Contact Employer",
+  pipeline: "Make Contact",
   interviewDateTime: "",
   interviewFormat: "Not set",
   roundLabel: "",
+  thankYouEmailSent: false,
   contactPerson: "",
   contacts: [],
   locationOrLink: "",
@@ -111,6 +112,18 @@ export function InterviewForm({ interview, initialFocus, onCancel, onDelete, onS
     }));
   };
 
+  const moveContact = (contactId: string, direction: -1 | 1) => {
+    setDraft((current) => {
+      const contacts = [...(current.contacts ?? [])];
+      const currentIndex = contacts.findIndex((contact) => contact.id === contactId);
+      const nextIndex = currentIndex + direction;
+      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= contacts.length) return current;
+
+      [contacts[currentIndex], contacts[nextIndex]] = [contacts[nextIndex], contacts[currentIndex]];
+      return { ...current, contacts };
+    });
+  };
+
   const addLink = () => {
     setDraft((current) => ({
       ...current,
@@ -123,6 +136,18 @@ export function InterviewForm({ interview, initialFocus, onCancel, onDelete, onS
       ...current,
       links: (current.links ?? []).filter((link) => link.id !== linkId)
     }));
+  };
+
+  const moveLink = (linkId: string, direction: -1 | 1) => {
+    setDraft((current) => {
+      const links = [...(current.links ?? [])];
+      const currentIndex = links.findIndex((link) => link.id === linkId);
+      const nextIndex = currentIndex + direction;
+      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= links.length) return current;
+
+      [links[currentIndex], links[nextIndex]] = [links[nextIndex], links[currentIndex]];
+      return { ...current, links };
+    });
   };
 
   const submit = async (event: FormEvent) => {
@@ -225,6 +250,14 @@ export function InterviewForm({ interview, initialFocus, onCancel, onDelete, onS
               ))}
             </select>
           </label>
+          <label className="field checkbox-field">
+            <input
+              type="checkbox"
+              checked={Boolean(draft.thankYouEmailSent)}
+              onChange={(e) => update("thankYouEmailSent", e.target.checked)}
+            />
+            <span>Thank-you email sent</span>
+          </label>
           <label className="field">
             <span>Date and time</span>
             <input
@@ -284,14 +317,34 @@ export function InterviewForm({ interview, initialFocus, onCancel, onDelete, onS
                   <article className="contact-form-card" key={link.id}>
                     <div className="contact-form-title">
                       <strong>Link {index + 1}</strong>
-                      <button
-                        type="button"
-                        className="icon-button"
-                        onClick={() => removeLink(link.id)}
-                        aria-label="Remove link"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="row-actions" role="group" aria-label={`Link ${index + 1} actions`}>
+                        <button
+                          type="button"
+                          className="icon-button"
+                          onClick={() => moveLink(link.id, -1)}
+                          disabled={index === 0}
+                          aria-label="Move link up"
+                        >
+                          <ChevronUp size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-button"
+                          onClick={() => moveLink(link.id, 1)}
+                          disabled={index === (draft.links ?? []).length - 1}
+                          aria-label="Move link down"
+                        >
+                          <ChevronDown size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-button"
+                          onClick={() => removeLink(link.id)}
+                          aria-label="Remove link"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                     <div className="contact-grid">
                       <label className="field">
@@ -354,14 +407,34 @@ export function InterviewForm({ interview, initialFocus, onCancel, onDelete, onS
                   <article className="contact-form-card" key={contact.id}>
                     <div className="contact-form-title">
                       <strong>Contact {index + 1}</strong>
-                      <button
-                        type="button"
-                        className="icon-button"
-                        onClick={() => removeContact(contact.id)}
-                        aria-label="Remove contact"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="row-actions" role="group" aria-label={`Contact ${index + 1} actions`}>
+                        <button
+                          type="button"
+                          className="icon-button"
+                          onClick={() => moveContact(contact.id, -1)}
+                          disabled={index === 0}
+                          aria-label="Move contact up"
+                        >
+                          <ChevronUp size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-button"
+                          onClick={() => moveContact(contact.id, 1)}
+                          disabled={index === (draft.contacts ?? []).length - 1}
+                          aria-label="Move contact down"
+                        >
+                          <ChevronDown size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-button"
+                          onClick={() => removeContact(contact.id)}
+                          aria-label="Remove contact"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                     <div className="contact-grid">
                       <label className="field">

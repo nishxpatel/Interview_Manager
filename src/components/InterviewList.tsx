@@ -19,6 +19,7 @@ interface InterviewListProps {
   interviews: Interview[];
   onEdit: (interview: Interview, focusField?: MissingFieldKey) => void;
   onPipelineChange: (interview: Interview, pipeline: PipelineStep) => Promise<void>;
+  onThankYouEmailChange: (interview: Interview, thankYouEmailSent: boolean) => Promise<void>;
 }
 
 type InterviewCardProps = Omit<InterviewListProps, "interviews"> & {
@@ -42,7 +43,8 @@ const contactPreviewLimit = 3;
 export function InterviewList({
   interviews,
   onEdit,
-  onPipelineChange
+  onPipelineChange,
+  onThankYouEmailChange
 }: InterviewListProps) {
   if (!interviews.length) {
     return (
@@ -62,6 +64,7 @@ export function InterviewList({
           interview={interview}
           onEdit={onEdit}
           onPipelineChange={onPipelineChange}
+          onThankYouEmailChange={onThankYouEmailChange}
         />
       ))}
     </div>
@@ -71,7 +74,8 @@ export function InterviewList({
 function InterviewCard({
   interview,
   onEdit,
-  onPipelineChange
+  onPipelineChange,
+  onThankYouEmailChange
 }: InterviewCardProps) {
   const [contactsExpanded, setContactsExpanded] = useState(false);
   const normalized = normalizeInterview(interview);
@@ -106,19 +110,29 @@ function InterviewCard({
           </div>
           {countdown ? <p className="countdown-pill">{countdown}</p> : null}
         </div>
-        <label className="pipeline-select">
-          <span>Pipeline</span>
-          <select
-            value={normalized.pipeline}
-            onChange={(event) =>
-              onPipelineChange(normalized, event.target.value as PipelineStep)
-            }
-          >
-            {PIPELINE_STEPS.map((pipeline) => (
-              <option key={pipeline}>{pipeline}</option>
-            ))}
-          </select>
-        </label>
+        <div className="card-status-controls">
+          <label className="pipeline-select">
+            <span>Pipeline</span>
+            <select
+              value={normalized.pipeline}
+              onChange={(event) =>
+                onPipelineChange(normalized, event.target.value as PipelineStep)
+              }
+            >
+              {PIPELINE_STEPS.map((pipeline) => (
+                <option key={pipeline}>{pipeline}</option>
+              ))}
+            </select>
+          </label>
+          <label className="thank-you-check">
+            <input
+              type="checkbox"
+              checked={Boolean(normalized.thankYouEmailSent)}
+              onChange={(event) => onThankYouEmailChange(normalized, event.target.checked)}
+            />
+            <span>Thank-you email</span>
+          </label>
+        </div>
       </div>
 
       {missingFields.length ? (

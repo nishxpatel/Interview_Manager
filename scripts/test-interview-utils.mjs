@@ -43,6 +43,7 @@ try {
   });
 
   assert.equal(normalized.pipeline, "Interview Scheduled");
+  assert.equal(normalized.thankYouEmailSent, false);
   assert.equal(normalized.interviewFormat, "Not set");
   assert.equal(normalized.notes, "");
   assert.equal("stage" in normalized, false);
@@ -97,6 +98,17 @@ try {
   });
   assert.equal(oldScreeningWithDate.pipeline, "Interview Scheduled");
   assert.equal(oldScreeningWithDate.interviewFormat, "Other");
+
+  const legacyFollowUp = normalizeInterview({
+    id: "legacy-follow-up",
+    company: "Legacy Co",
+    position: "Developer Co-op",
+    pipeline: "Follow-Up Sent / Done",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z"
+  });
+  assert.equal(legacyFollowUp.pipeline, "Interview Completed");
+  assert.equal(legacyFollowUp.thankYouEmailSent, true);
 } finally {
   await rm(outdir, { recursive: true, force: true });
 }
