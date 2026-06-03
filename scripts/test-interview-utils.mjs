@@ -83,7 +83,7 @@ try {
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z"
   });
-  assert.equal(oldRoundWithoutDate.pipeline, "Waiting for Employer Response");
+  assert.equal(oldRoundWithoutDate.pipeline, "Waiting for Employer Reply");
   assert.equal(oldRoundWithoutDate.interviewFormat, "On-Site");
 
   const oldScreeningWithDate = normalizeInterview({
@@ -98,6 +98,26 @@ try {
   });
   assert.equal(oldScreeningWithDate.pipeline, "Interview Scheduled");
   assert.equal(oldScreeningWithDate.interviewFormat, "Other");
+
+  const oldStudentContact = normalizeInterview({
+    id: "old-student-contact",
+    company: "Legacy Co",
+    position: "Developer Co-op",
+    pipeline: "Student Needs to Contact Employer",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z"
+  });
+  assert.equal(oldStudentContact.pipeline, "Make Contact");
+
+  const oldScheduling = normalizeInterview({
+    id: "old-scheduling",
+    company: "Legacy Co",
+    position: "Developer Co-op",
+    pipeline: "Scheduling in Progress",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z"
+  });
+  assert.equal(oldScheduling.pipeline, "Waiting for Employer Reply");
 
   const legacyFollowUp = normalizeInterview({
     id: "legacy-follow-up",
