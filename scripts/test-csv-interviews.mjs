@@ -28,7 +28,7 @@ try {
       id: "one",
       company: "Acme, Inc.",
       position: "Data \"Platform\" Co-op",
-      pipeline: "Interview Scheduled",
+      pipeline: "Interview Completed",
       interviewDateTime: "2026-06-01T10:00",
       interviewFormat: "Teams",
       roundLabel: "First round",
@@ -64,7 +64,7 @@ try {
   const [draft] = importInterviewsFromCsv(csv);
   assert.equal(draft.company, "Acme, Inc.");
   assert.equal(draft.position, "Data \"Platform\" Co-op");
-  assert.equal(draft.pipeline, "Interview Scheduled");
+  assert.equal(draft.pipeline, "Interview Completed");
   assert.equal(draft.interviewFormat, "Teams");
   assert.equal(draft.thankYouEmailSent, true);
   assert.equal(draft.contacts?.[0]?.email, "avery@example.com");

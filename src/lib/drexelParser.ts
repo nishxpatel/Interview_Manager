@@ -5,6 +5,7 @@ import type {
   InterviewLink,
   PipelineStep
 } from "../types/interview";
+import { createId } from "./id";
 
 interface RichTextSegment {
   text: string;
@@ -230,7 +231,7 @@ const detectFormat = (recordText: string): InterviewFormat => {
 
 const parseContacts = (lines: string[]): InterviewContact[] => {
   const contact: InterviewContact = {
-    id: crypto.randomUUID(),
+    id: createId(),
     name: "",
     title: "",
     email: "",
@@ -287,7 +288,7 @@ const buildLinks = (headerLine: RichLine, blockLines: RichLine[], header: Drexel
     if (!cleanedUrl || seen.has(cleanedUrl.toLowerCase())) return;
     seen.add(cleanedUrl.toLowerCase());
     links.push({
-      id: crypto.randomUUID(),
+      id: createId(),
       label,
       url: cleanedUrl,
       type

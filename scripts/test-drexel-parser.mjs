@@ -1,10 +1,28 @@
 import assert from "node:assert/strict";
 import { log } from "node:console";
 import { existsSync, readFileSync } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import process from "node:process";
+import { pathToFileURL } from "node:url";
+import { build } from "esbuild";
 
-const { parseDrexelInterviewText } = await import("../src/lib/drexelParser.ts");
+const outdir = await mkdtemp(join(tmpdir(), "drexel-parser-"));
+const outfile = join(outdir, "drexelParser.mjs");
 
+await build({
+  entryPoints: ["src/lib/drexelParser.ts"],
+  bundle: true,
+  format: "esm",
+  outfile,
+  platform: "node",
+  logLevel: "silent"
+});
+
+const { parseDrexelInterviewText } = await import(pathToFileURL(outfile).href);
+
+try {
 const samplePath = process.env.DREXEL_IMPORT_SAMPLE ?? "pasted_import.rtfd/TXT.rtf";
 
 const assertNoDuplicateLinks = (records) => {
@@ -97,3 +115,6 @@ if (existsSync(samplePath)) {
 }
 
 log("Drexel parser tests passed.");
+} finally {
+  await rm(outdir, { recursive: true, force: true });
+}

@@ -16,6 +16,7 @@ import {
 import type { Interview, InterviewDraft } from "../types/interview";
 import { firestore } from "./firebase";
 import { sanitizeObjectForFirestore } from "./firestoreSanitizer";
+import { createId } from "./id";
 import { interviewToDraft, normalizeInterview, prepareDraftForSave } from "./interviewUtils";
 
 const localKey = (uid: string) => `interview-manager:${uid}:interviews`;
@@ -89,7 +90,7 @@ export const createInterview = async (uid: string, draft: InterviewDraft) => {
     const current = fromStored(window.localStorage.getItem(localKey(uid)));
     const interview: Interview = {
       ...preparedDraft,
-      id: crypto.randomUUID(),
+      id: createId(),
       createdAt: now(),
       updatedAt: now()
     };

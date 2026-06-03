@@ -140,6 +140,47 @@ try {
   });
   assert.equal(legacyFollowUp.pipeline, "Interview Completed");
   assert.equal(legacyFollowUp.thankYouEmailSent, true);
+
+  const originalCryptoDescriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  Object.defineProperty(globalThis, "crypto", {
+    configurable: true,
+    value: {
+      getRandomValues(values) {
+        for (let index = 0; index < values.length; index += 1) values[index] = index;
+        return values;
+      }
+    }
+  });
+
+  try {
+    const fallbackIds = normalizeInterview({
+      id: "fallback-id",
+      company: "Legacy Co",
+      position: "Developer Co-op",
+      pipeline: "Make Contact",
+      contactPerson: "Recruiter Name",
+      jobDescriptionLink: "https://example.com/job",
+      contacts: [{ email: "recruiter@example.com" }],
+      links: [{ label: "Posting" }],
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z"
+    });
+
+    assert.match(
+      fallbackIds.contacts[0].id,
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+    );
+    assert.equal(fallbackIds.contacts[0].name, "");
+    assert.equal(fallbackIds.links[0].url, "https://example.com/job");
+    assert.match(
+      fallbackIds.links[0].id,
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+    );
+  } finally {
+    if (originalCryptoDescriptor) {
+      Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
+    }
+  }
 } finally {
   await rm(outdir, { recursive: true, force: true });
 }

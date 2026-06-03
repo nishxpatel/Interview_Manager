@@ -10,9 +10,10 @@ import {
   type MissingFieldKey,
   type PipelineStep
 } from "../types/interview";
+import { createId } from "./id";
 
 export const createBlankContact = (): InterviewContact => ({
-  id: crypto.randomUUID(),
+  id: createId(),
   name: "",
   title: "",
   email: "",
@@ -21,22 +22,24 @@ export const createBlankContact = (): InterviewContact => ({
 });
 
 export const createBlankLink = (): InterviewLink => ({
-  id: crypto.randomUUID(),
+  id: createId(),
   label: "",
   url: "",
   type: "other"
 });
 
-const hasContactValue = (contact: InterviewContact) =>
+const trimValue = (value?: string | null) => value?.trim() ?? "";
+
+const hasContactValue = (contact: Partial<InterviewContact>) =>
   Boolean(
-    contact.name.trim() ||
-      contact.title?.trim() ||
-      contact.email?.trim() ||
-      contact.phone?.trim() ||
-      contact.notes?.trim()
+    trimValue(contact.name) ||
+      trimValue(contact.title) ||
+      trimValue(contact.email) ||
+      trimValue(contact.phone) ||
+      trimValue(contact.notes)
   );
 
-const hasLinkValue = (link: InterviewLink) => Boolean(link.url.trim());
+const hasLinkValue = (link: Partial<InterviewLink>) => Boolean(trimValue(link.url));
 
 const inferLinkType = (url: string, label = ""): InterviewLink["type"] => {
   const text = `${url} ${label}`.toLowerCase();
@@ -164,15 +167,20 @@ export const normalizeContacts = (interview: Partial<InterviewDraft>): Interview
   if (contacts.length) {
     return contacts.map((contact) => ({
       ...contact,
-      id: contact.id || crypto.randomUUID()
+      id: contact.id || createId(),
+      name: contact.name ?? "",
+      title: contact.title ?? "",
+      email: contact.email ?? "",
+      phone: contact.phone ?? "",
+      notes: contact.notes ?? ""
     }));
   }
 
-  if (interview.contactPerson?.trim()) {
+  if (trimValue(interview.contactPerson)) {
     return [
       {
-        id: crypto.randomUUID(),
-        name: interview.contactPerson.trim(),
+        id: createId(),
+        name: trimValue(interview.contactPerson),
         title: "",
         email: "",
         phone: "",
@@ -187,17 +195,17 @@ export const normalizeContacts = (interview: Partial<InterviewDraft>): Interview
 export const normalizeLinks = (interview: Partial<InterviewDraft>): InterviewLink[] => {
   const links = (interview.links ?? []).filter(hasLinkValue).map((link) => ({
     ...link,
-    id: link.id || crypto.randomUUID(),
-    label: link.label?.trim() || "Link",
-    url: link.url.trim(),
+    id: link.id || createId(),
+    label: trimValue(link.label) || "Link",
+    url: trimValue(link.url),
     type: link.type ?? inferLinkType(link.url, link.label)
   }));
 
-  if (interview.jobDescriptionLink?.trim()) {
+  if (trimValue(interview.jobDescriptionLink)) {
     links.unshift({
-      id: crypto.randomUUID(),
+      id: createId(),
       label: "Job description",
-      url: interview.jobDescriptionLink.trim(),
+      url: trimValue(interview.jobDescriptionLink),
       type: "job-description"
     });
   }
