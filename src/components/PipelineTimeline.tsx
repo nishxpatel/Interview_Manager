@@ -21,7 +21,7 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
   }));
   const activeCount = interviewsByStage.reduce((sum, stage) => sum + stage.interviews.length, 0);
   const timelineStyle = {
-    "--timeline-stage-count": interviewsByStage.length + 1
+    "--timeline-stage-count": interviewsByStage.length
   } as CSSProperties;
 
   return (
@@ -34,7 +34,8 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
       </div>
 
       <div className="pipeline-timeline" role="list" style={timelineStyle}>
-        {interviewsByStage.map((stage) => {
+        {interviewsByStage.map((stage, index) => {
+          const isFinalStage = index === interviewsByStage.length - 1;
           const isExpanded = Boolean(expandedStages[stage.step]);
           const hasMore = stage.interviews.length > visibleInterviewLimit;
           const visibleInterviews = isExpanded
@@ -43,12 +44,21 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
           const hiddenCount = stage.interviews.length - visibleInterviewLimit;
 
           return (
-            <article className="timeline-stage" key={stage.step} role="listitem">
+            <article
+              className={`timeline-stage${isFinalStage ? " is-final-stage" : ""}`}
+              key={stage.step}
+              role="listitem"
+            >
               <div className="timeline-stage-marker" aria-hidden="true">
                 <span className="timeline-dot">
                   <Circle size={12} fill="currentColor" />
                 </span>
                 <i />
+                {isFinalStage ? (
+                  <span className="timeline-dot timeline-end-dot">
+                    <Circle size={12} fill="currentColor" />
+                  </span>
+                ) : null}
               </div>
 
               <div className="timeline-stage-body">
@@ -88,16 +98,6 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
             </article>
           );
         })}
-        <article className="timeline-stage timeline-stage-terminal" role="listitem">
-          <div className="timeline-stage-marker" aria-hidden="true">
-            <span className="timeline-dot">
-              <Circle size={12} fill="currentColor" />
-            </span>
-          </div>
-          <div className="timeline-terminal-body">
-            <h3>Done</h3>
-          </div>
-        </article>
       </div>
     </section>
   );
