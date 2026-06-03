@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from "react";
-import { ArrowRight, Circle } from "lucide-react";
+import { Circle } from "lucide-react";
 import { normalizeInterview } from "../lib/interviewUtils";
 import { PIPELINE_STEPS, type Interview, type PipelineStep } from "../types/interview";
 
@@ -10,26 +10,18 @@ interface PipelineTimelineProps {
 const timelineSteps = PIPELINE_STEPS.filter((step) => step !== "Withdrawn");
 const visibleInterviewLimit = 3;
 
-const nextStageLabels: Partial<Record<PipelineStep, string>> = {
-  "Make Contact": "Waiting for Employer Reply",
-  "Waiting for Employer Reply": "Interview Scheduled",
-  "Interview Scheduled": "Interview Completed",
-  "Interview Completed": "Done"
-};
-
 export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
   const [expandedStages, setExpandedStages] = useState<Partial<Record<PipelineStep, boolean>>>({});
   const normalizedInterviews = interviews.map(normalizeInterview);
   const interviewsByStage = timelineSteps.map((step) => ({
     step,
-    nextStage: nextStageLabels[step],
     interviews: normalizedInterviews
       .filter((interview) => interview.pipeline === step)
       .sort((left, right) => left.company.localeCompare(right.company))
   }));
   const activeCount = interviewsByStage.reduce((sum, stage) => sum + stage.interviews.length, 0);
   const timelineStyle = {
-    "--timeline-stage-count": interviewsByStage.length
+    "--timeline-stage-count": interviewsByStage.length + 1
   } as CSSProperties;
 
   return (
@@ -42,7 +34,7 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
       </div>
 
       <div className="pipeline-timeline" role="list" style={timelineStyle}>
-        {interviewsByStage.map((stage, index) => {
+        {interviewsByStage.map((stage) => {
           const isExpanded = Boolean(expandedStages[stage.step]);
           const hasMore = stage.interviews.length > visibleInterviewLimit;
           const visibleInterviews = isExpanded
@@ -56,17 +48,13 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
                 <span className="timeline-dot">
                   <Circle size={12} fill="currentColor" />
                 </span>
-                {index < interviewsByStage.length - 1 ? <i /> : null}
+                <i />
               </div>
 
               <div className="timeline-stage-body">
                 <div className="timeline-stage-header">
                   <span>{stage.interviews.length}</span>
                   <h3>{stage.step}</h3>
-                </div>
-                <div className="timeline-next">
-                  <ArrowRight size={17} />
-                  <span>Next: {stage.nextStage}</span>
                 </div>
               </div>
 
@@ -100,6 +88,16 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
             </article>
           );
         })}
+        <article className="timeline-stage timeline-stage-terminal" role="listitem">
+          <div className="timeline-stage-marker" aria-hidden="true">
+            <span className="timeline-dot">
+              <Circle size={12} fill="currentColor" />
+            </span>
+          </div>
+          <div className="timeline-terminal-body">
+            <h3>Done</h3>
+          </div>
+        </article>
       </div>
     </section>
   );
