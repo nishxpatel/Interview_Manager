@@ -99,11 +99,9 @@ function InterviewRow({
 
   return (
     <article className="interview-row">
-      <div className="interview-row-main">
-        <div className="interview-title-block">
-          <h3>{normalized.company}</h3>
-          <p>{normalized.position}</p>
-        </div>
+      <div className="interview-title-block">
+        <h3>{normalized.company}</h3>
+        <p>{normalized.position}</p>
         <div className="meta-row interview-row-meta">
           <span>{normalized.pipeline}</span>
           {normalized.roundLabel ? <span>{normalized.roundLabel}</span> : null}
@@ -111,6 +109,103 @@ function InterviewRow({
           {formatLabel ? <span>{formatLabel}</span> : showScheduledTags ? <span>Format not set</span> : null}
           {countdown ? <span className="countdown-pill">{countdown}</span> : null}
         </div>
+      </div>
+
+      <div className="interview-row-content">
+        <div className="interview-row-details">
+          <span className="detail-item">
+            <strong>Location</strong>
+            <span className="detail-value">
+              {normalized.locationOrLink ? (
+                normalized.locationOrLink.startsWith("http") ? (
+                  <a href={normalized.locationOrLink} target="_blank" rel="noreferrer">
+                    Open link <ExternalLink size={13} />
+                  </a>
+                ) : (
+                  normalized.locationOrLink
+                )
+              ) : (
+                <button className="missing-inline" onClick={() => onEdit(normalized, "locationOrLink")}>
+                  Add location
+                </button>
+              )}
+            </span>
+          </span>
+          <span className="detail-item">
+            <strong>Links</strong>
+            <span className="detail-value">
+              {(normalized.links ?? []).length ? (
+                <span className="link-list">
+                  {(normalized.links ?? []).map((link) => (
+                    <a href={link.url} target="_blank" rel="noreferrer" key={link.id}>
+                      {link.label || "Link"} <ExternalLink size={13} />
+                    </a>
+                  ))}
+                </span>
+              ) : (
+                "No link"
+              )}
+            </span>
+          </span>
+        </div>
+
+        {contacts.length ? (
+          <section className="contacts-compact" aria-label="Contacts">
+            <div className="compact-section-heading">
+              <strong>Contacts ({contacts.length})</strong>
+              {shouldCollapseContacts ? (
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => setContactsExpanded((current) => !current)}
+                >
+                  {contactsExpanded ? (
+                    <>
+                      Show fewer contacts <ChevronUp size={14} />
+                    </>
+                  ) : (
+                    <>
+                      Show {hiddenContactCount} more contacts <ChevronDown size={14} />
+                    </>
+                  )}
+                </button>
+              ) : null}
+            </div>
+            <div className="contact-compact-list">
+              {visibleContacts.map((contact) => (
+                <div className="contact-compact-row" key={contact.id}>
+                  <span className="contact-identity">
+                    <b>{contact.name || contact.email || "Unnamed contact"}</b>
+                    {contact.title ? <small>{contact.title}</small> : null}
+                  </span>
+                  <span className="contact-methods">
+                    {contact.email ? <a href={`mailto:${contact.email}`}>{contact.email}</a> : null}
+                    {contact.phone ? <a href={`tel:${contact.phone}`}>{contact.phone}</a> : null}
+                  </span>
+                  {contact.notes ? <p>{contact.notes}</p> : null}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {(normalized.questions || normalized.notes) && (
+          <div className="notes-preview">
+            {normalized.questions ? (
+              <p>
+                <strong>Questions:</strong> {normalized.questions}
+              </p>
+            ) : null}
+            {normalized.notes ? (
+              <p>
+                <strong>Notes:</strong> {normalized.notes}
+              </p>
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      <div className="interview-row-side">
         <div className="interview-row-actions">
           <label className="pipeline-select compact-pipeline-select">
             <span>Pipeline</span>
@@ -140,110 +235,18 @@ function InterviewRow({
             Edit
           </button>
         </div>
-      </div>
 
-      <div className="interview-row-details">
-        <span className="detail-item">
-          <strong>Location</strong>
-          <span className="detail-value">
-            {normalized.locationOrLink ? (
-              normalized.locationOrLink.startsWith("http") ? (
-                <a href={normalized.locationOrLink} target="_blank" rel="noreferrer">
-                  Open link <ExternalLink size={13} />
-                </a>
-              ) : (
-                normalized.locationOrLink
-              )
-            ) : (
-              <button className="missing-inline" onClick={() => onEdit(normalized, "locationOrLink")}>
-                Add location
+        {missingFields.length ? (
+          <div className="missing-fields" aria-label="Missing fields">
+            <strong>Missing:</strong>
+            {missingFields.map((field) => (
+              <button className="missing-field" key={field} onClick={() => onEdit(normalized, field)}>
+                {missingFieldLabels[field]}
               </button>
-            )}
-          </span>
-        </span>
-        <span className="detail-item">
-          <strong>Links</strong>
-          <span className="detail-value">
-            {(normalized.links ?? []).length ? (
-              <span className="link-list">
-                {(normalized.links ?? []).map((link) => (
-                  <a href={link.url} target="_blank" rel="noreferrer" key={link.id}>
-                    {link.label || "Link"} <ExternalLink size={13} />
-                  </a>
-                ))}
-              </span>
-            ) : (
-              "No link"
-            )}
-          </span>
-        </span>
-      </div>
-
-      {missingFields.length ? (
-        <div className="missing-fields" aria-label="Missing fields">
-          <strong>Missing:</strong>
-          {missingFields.map((field) => (
-            <button className="missing-field" key={field} onClick={() => onEdit(normalized, field)}>
-              {missingFieldLabels[field]}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      {contacts.length ? (
-        <section className="contacts-compact" aria-label="Contacts">
-          <div className="compact-section-heading">
-            <strong>Contacts ({contacts.length})</strong>
-            {shouldCollapseContacts ? (
-              <button
-                type="button"
-                className="text-button"
-                onClick={() => setContactsExpanded((current) => !current)}
-              >
-                {contactsExpanded ? (
-                  <>
-                    Show fewer contacts <ChevronUp size={14} />
-                  </>
-                ) : (
-                  <>
-                    Show {hiddenContactCount} more contacts <ChevronDown size={14} />
-                  </>
-                )}
-              </button>
-            ) : null}
-          </div>
-          <div className="contact-compact-list">
-            {visibleContacts.map((contact) => (
-              <div className="contact-compact-row" key={contact.id}>
-                <span className="contact-identity">
-                  <b>{contact.name || contact.email || "Unnamed contact"}</b>
-                  {contact.title ? <small>{contact.title}</small> : null}
-                </span>
-                <span className="contact-methods">
-                  {contact.email ? <a href={`mailto:${contact.email}`}>{contact.email}</a> : null}
-                  {contact.phone ? <a href={`tel:${contact.phone}`}>{contact.phone}</a> : null}
-                </span>
-                {contact.notes ? <p>{contact.notes}</p> : null}
-              </div>
             ))}
           </div>
-        </section>
-      ) : null}
-
-      {(normalized.questions || normalized.notes) && (
-        <div className="notes-preview">
-          {normalized.questions ? (
-            <p>
-              <strong>Questions:</strong> {normalized.questions}
-            </p>
-          ) : null}
-          {normalized.notes ? (
-            <p>
-              <strong>Notes:</strong> {normalized.notes}
-            </p>
-          ) : null}
-        </div>
-      )}
+        ) : null}
+      </div>
     </article>
   );
 }
