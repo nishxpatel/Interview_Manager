@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { ArrowRight, Circle } from "lucide-react";
 import { normalizeInterview } from "../lib/interviewUtils";
 import { PIPELINE_STEPS, type Interview, type PipelineStep } from "../types/interview";
@@ -24,33 +25,38 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
       .sort((left, right) => left.company.localeCompare(right.company))
   }));
   const activeCount = interviewsByStage.reduce((sum, stage) => sum + stage.interviews.length, 0);
+  const timelineStyle = {
+    "--timeline-stage-count": interviewsByStage.length
+  } as CSSProperties;
 
   return (
     <section className="timeline-section" aria-label="Interview pipeline timeline">
-      <div className="section-heading tight">
+      <div className="section-heading tight timeline-heading">
         <div>
           <h2>Pipeline timeline</h2>
           <p>{activeCount} interviews placed across {PIPELINE_STEPS.length} stages</p>
         </div>
       </div>
 
-      <div className="pipeline-timeline" role="list">
+      <div className="pipeline-timeline" role="list" style={timelineStyle}>
         {interviewsByStage.map((stage, index) => (
           <article className="timeline-stage" key={stage.step} role="listitem">
             <div className="timeline-stage-marker" aria-hidden="true">
-              <span>
+              <span className="timeline-dot">
                 <Circle size={12} fill="currentColor" />
               </span>
               {index < interviewsByStage.length - 1 ? <i /> : null}
             </div>
 
-            <div className="timeline-stage-header">
-              <span>{stage.interviews.length}</span>
-              <h3>{stage.step}</h3>
-            </div>
-            <div className="timeline-next">
-              <ArrowRight size={14} />
-              <span>Next: {stage.nextStage}</span>
+            <div className="timeline-stage-body">
+              <div className="timeline-stage-header">
+                <span>{stage.interviews.length}</span>
+                <h3>{stage.step}</h3>
+              </div>
+              <div className="timeline-next">
+                <ArrowRight size={17} />
+                <span>Next: {stage.nextStage}</span>
+              </div>
             </div>
 
             <div className="timeline-interviews">

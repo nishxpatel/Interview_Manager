@@ -215,16 +215,17 @@ export const normalizeInterview = (interview: Interview): Interview => {
   const contacts = normalizeContacts(interview);
   const links = normalizeLinks(interview);
   const current = withoutLegacyFields(interview);
+  const pipeline = mapLegacyPipeline(interview);
   const jobDescriptionLink =
     interview.jobDescriptionLink ??
     links.find((link) => link.type === "job-description" || link.type === "posting")?.url ??
     "";
   return {
     ...current,
-    pipeline: mapLegacyPipeline(interview),
+    pipeline,
     interviewFormat: normalizeInterviewFormat(interview.interviewFormat),
     roundLabel: interview.roundLabel ?? "",
-    thankYouEmailSent: mapLegacyThankYouEmailSent(interview),
+    thankYouEmailSent: pipeline === "Interview Completed" ? mapLegacyThankYouEmailSent(interview) : false,
     jobDescriptionLink,
     links,
     contacts,
@@ -260,11 +261,13 @@ export const prepareDraftForSave = (draft: InterviewDraft): InterviewDraft => {
   const contacts = normalizeContacts(draft);
   const links = normalizeLinks(draft);
   const current = withoutLegacyFields(draft);
+  const pipeline = mapLegacyPipeline(draft as LegacyInterviewRecord);
   return {
     ...current,
-    pipeline: mapLegacyPipeline(draft as LegacyInterviewRecord),
+    pipeline,
     interviewFormat: normalizeInterviewFormat(draft.interviewFormat),
-    thankYouEmailSent: mapLegacyThankYouEmailSent(draft as LegacyInterviewRecord),
+    thankYouEmailSent:
+      pipeline === "Interview Completed" ? mapLegacyThankYouEmailSent(draft as LegacyInterviewRecord) : false,
     contacts,
     links,
     notes: normalizeNotes(draft.notes, draft.source),

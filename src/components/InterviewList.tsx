@@ -91,6 +91,7 @@ function InterviewCard({
   const hiddenContactCount = Math.max(0, contacts.length - contactPreviewLimit);
   const dateLabel = formatDate(normalized.interviewDateTime);
   const showScheduledTags = isScheduledPipeline(normalized.pipeline);
+  const isCompleted = normalized.pipeline === "Interview Completed";
   const formatLabel =
     normalized.interviewFormat && normalized.interviewFormat !== "Not set"
       ? normalized.interviewFormat
@@ -124,14 +125,16 @@ function InterviewCard({
               ))}
             </select>
           </label>
-          <label className="thank-you-check">
-            <input
-              type="checkbox"
-              checked={Boolean(normalized.thankYouEmailSent)}
-              onChange={(event) => onThankYouEmailChange(normalized, event.target.checked)}
-            />
-            <span>Thank-you email</span>
-          </label>
+          {isCompleted ? (
+            <label className="thank-you-check">
+              <input
+                type="checkbox"
+                checked={Boolean(normalized.thankYouEmailSent)}
+                onChange={(event) => onThankYouEmailChange(normalized, event.target.checked)}
+              />
+              <span>Thank-you email</span>
+            </label>
+          ) : null}
         </div>
       </div>
 

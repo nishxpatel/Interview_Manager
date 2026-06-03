@@ -15,6 +15,7 @@ import { DrexelImport } from "./DrexelImport";
 import { InterviewForm } from "./InterviewForm";
 import { InterviewList } from "./InterviewList";
 import { PipelineTimeline } from "./PipelineTimeline";
+import { ScheduledCalendar } from "./ScheduledCalendar";
 import {
   createInterview,
   deleteAllInterviews,
@@ -150,7 +151,9 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
         normalized.position,
         normalized.pipeline,
         normalized.interviewFormat,
-        normalized.thankYouEmailSent ? "thank-you email sent" : "",
+        normalized.pipeline === "Interview Completed" && normalized.thankYouEmailSent
+          ? "thank-you email sent"
+          : "",
         normalized.roundLabel,
         normalized.locationOrLink,
         normalized.jobDescriptionLink,
@@ -365,6 +368,12 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
     setFilters((current) => ({ ...current, [key]: value }));
   };
 
+  const openEditForm = (interview: Interview, focusField?: MissingFieldKey) => {
+    setSelectedInterview(interview);
+    setSelectedFocus(focusField);
+    setIsFormOpen(true);
+  };
+
   return (
     <section className="dashboard-shell">
       <div className="dashboard-hero">
@@ -437,6 +446,8 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
       <PipelineTimeline interviews={interviews} />
 
       <AnalyticsPanel interviews={interviews} />
+
+      <ScheduledCalendar interviews={interviews} onEdit={(interview) => openEditForm(interview)} />
 
       <div className="table-section">
         <div className="section-heading">
@@ -605,15 +616,13 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
         ) : null}
         <InterviewList
           interviews={filteredInterviews}
-          onEdit={(interview, focusField) => {
-            setSelectedInterview(interview);
-            setSelectedFocus(focusField);
-            setIsFormOpen(true);
-          }}
+          onEdit={openEditForm}
           onPipelineChange={(interview, pipeline) =>
             updateInterview(user.uid, interview.id, {
               ...interviewToDraft(interview),
-              pipeline: pipeline as PipelineStep
+              pipeline: pipeline as PipelineStep,
+              thankYouEmailSent:
+                pipeline === "Interview Completed" ? interview.thankYouEmailSent : false
             })
           }
           onThankYouEmailChange={(interview, thankYouEmailSent) =>

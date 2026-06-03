@@ -119,6 +119,17 @@ try {
   });
   assert.equal(oldScheduling.pipeline, "Waiting for Employer Reply");
 
+  const nonCompletedWithThankYou = normalizeInterview({
+    id: "non-completed-thank-you",
+    company: "Legacy Co",
+    position: "Developer Co-op",
+    pipeline: "Interview Scheduled",
+    thankYouEmailSent: true,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z"
+  });
+  assert.equal(nonCompletedWithThankYou.thankYouEmailSent, false);
+
   const legacyFollowUp = normalizeInterview({
     id: "legacy-follow-up",
     company: "Legacy Co",

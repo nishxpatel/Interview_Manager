@@ -72,6 +72,14 @@ export function InterviewForm({ interview, initialFocus, onCancel, onDelete, onS
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
+  const updatePipeline = (pipeline: PipelineStep) => {
+    setDraft((current) => ({
+      ...current,
+      pipeline,
+      thankYouEmailSent: pipeline === "Interview Completed" ? current.thankYouEmailSent : false
+    }));
+  };
+
   const updateContact = <K extends keyof InterviewContact>(
     contactId: string,
     key: K,
@@ -164,10 +172,12 @@ export function InterviewForm({ interview, initialFocus, onCancel, onDelete, onS
 
     setSaving(true);
     try {
+      const isCompleted = draft.pipeline === "Interview Completed";
       await onSave({
         ...draft,
         company: draft.company.trim(),
-        position: draft.position.trim()
+        position: draft.position.trim(),
+        thankYouEmailSent: isCompleted ? draft.thankYouEmailSent : false
       });
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save interview.");
@@ -231,7 +241,7 @@ export function InterviewForm({ interview, initialFocus, onCancel, onDelete, onS
             <select
               data-focus="pipeline"
               value={draft.pipeline}
-              onChange={(e) => update("pipeline", e.target.value as PipelineStep)}
+              onChange={(e) => updatePipeline(e.target.value as PipelineStep)}
             >
               {PIPELINE_STEPS.map((pipeline) => (
                 <option key={pipeline}>{pipeline}</option>
@@ -250,14 +260,16 @@ export function InterviewForm({ interview, initialFocus, onCancel, onDelete, onS
               ))}
             </select>
           </label>
-          <label className="field checkbox-field">
-            <input
-              type="checkbox"
-              checked={Boolean(draft.thankYouEmailSent)}
-              onChange={(e) => update("thankYouEmailSent", e.target.checked)}
-            />
-            <span>Thank-you email sent</span>
-          </label>
+          {draft.pipeline === "Interview Completed" ? (
+            <label className="field checkbox-field">
+              <input
+                type="checkbox"
+                checked={Boolean(draft.thankYouEmailSent)}
+                onChange={(e) => update("thankYouEmailSent", e.target.checked)}
+              />
+              <span>Thank-you email sent</span>
+            </label>
+          ) : null}
           <label className="field">
             <span>Date and time</span>
             <input
