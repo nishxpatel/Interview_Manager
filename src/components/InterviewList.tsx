@@ -22,7 +22,7 @@ interface InterviewListProps {
   onThankYouEmailChange: (interview: Interview, thankYouEmailSent: boolean) => Promise<void>;
 }
 
-type InterviewCardProps = Omit<InterviewListProps, "interviews"> & {
+type InterviewRowProps = Omit<InterviewListProps, "interviews"> & {
   interview: Interview;
 };
 
@@ -59,7 +59,7 @@ export function InterviewList({
   return (
     <div className="interview-list">
       {interviews.map((interview) => (
-        <InterviewCard
+        <InterviewRow
           key={interview.id}
           interview={interview}
           onEdit={onEdit}
@@ -71,12 +71,12 @@ export function InterviewList({
   );
 }
 
-function InterviewCard({
+function InterviewRow({
   interview,
   onEdit,
   onPipelineChange,
   onThankYouEmailChange
-}: InterviewCardProps) {
+}: InterviewRowProps) {
   const [contactsExpanded, setContactsExpanded] = useState(false);
   const normalized = normalizeInterview(interview);
   const contacts = normalizeContacts(normalized);
@@ -98,21 +98,21 @@ function InterviewCard({
       : "";
 
   return (
-    <article className="interview-card">
-      <div className="interview-main">
-        <div>
+    <article className="interview-row">
+      <div className="interview-row-main">
+        <div className="interview-title-block">
           <h3>{normalized.company}</h3>
           <p>{normalized.position}</p>
-          <div className="meta-row">
-            <span>{normalized.pipeline}</span>
-            {normalized.roundLabel ? <span>{normalized.roundLabel}</span> : null}
-            {dateLabel ? <span>{dateLabel}</span> : showScheduledTags ? <span>Date not scheduled</span> : null}
-            {formatLabel ? <span>{formatLabel}</span> : showScheduledTags ? <span>Format not set</span> : null}
-          </div>
-          {countdown ? <p className="countdown-pill">{countdown}</p> : null}
         </div>
-        <div className="card-status-controls">
-          <label className="pipeline-select">
+        <div className="meta-row interview-row-meta">
+          <span>{normalized.pipeline}</span>
+          {normalized.roundLabel ? <span>{normalized.roundLabel}</span> : null}
+          {dateLabel ? <span>{dateLabel}</span> : showScheduledTags ? <span>Date not scheduled</span> : null}
+          {formatLabel ? <span>{formatLabel}</span> : showScheduledTags ? <span>Format not set</span> : null}
+          {countdown ? <span className="countdown-pill">{countdown}</span> : null}
+        </div>
+        <div className="interview-row-actions">
+          <label className="pipeline-select compact-pipeline-select">
             <span>Pipeline</span>
             <select
               value={normalized.pipeline}
@@ -135,7 +135,48 @@ function InterviewCard({
               <span>Thank-you email</span>
             </label>
           ) : null}
+          <button className="ghost-button compact-edit-button" onClick={() => onEdit(normalized)}>
+            <Edit3 size={15} />
+            Edit
+          </button>
         </div>
+      </div>
+
+      <div className="interview-row-details">
+        <span className="detail-item">
+          <strong>Location</strong>
+          <span className="detail-value">
+            {normalized.locationOrLink ? (
+              normalized.locationOrLink.startsWith("http") ? (
+                <a href={normalized.locationOrLink} target="_blank" rel="noreferrer">
+                  Open link <ExternalLink size={13} />
+                </a>
+              ) : (
+                normalized.locationOrLink
+              )
+            ) : (
+              <button className="missing-inline" onClick={() => onEdit(normalized, "locationOrLink")}>
+                Add location
+              </button>
+            )}
+          </span>
+        </span>
+        <span className="detail-item">
+          <strong>Links</strong>
+          <span className="detail-value">
+            {(normalized.links ?? []).length ? (
+              <span className="link-list">
+                {(normalized.links ?? []).map((link) => (
+                  <a href={link.url} target="_blank" rel="noreferrer" key={link.id}>
+                    {link.label || "Link"} <ExternalLink size={13} />
+                  </a>
+                ))}
+              </span>
+            ) : (
+              "No link"
+            )}
+          </span>
+        </span>
       </div>
 
       {missingFields.length ? (
@@ -148,39 +189,6 @@ function InterviewCard({
           ))}
         </div>
       ) : null}
-
-      <div className="interview-summary-grid">
-        <span className="summary-item">
-          <strong>Location</strong>
-          {normalized.locationOrLink ? (
-            normalized.locationOrLink.startsWith("http") ? (
-              <a href={normalized.locationOrLink} target="_blank" rel="noreferrer">
-                Open link <ExternalLink size={13} />
-              </a>
-            ) : (
-              normalized.locationOrLink
-            )
-          ) : (
-            <button className="missing-inline" onClick={() => onEdit(normalized, "locationOrLink")}>
-              Add location
-            </button>
-          )}
-        </span>
-        <span className="summary-item">
-          <strong>Links</strong>
-          {(normalized.links ?? []).length ? (
-            <span className="link-list">
-              {(normalized.links ?? []).map((link) => (
-                <a href={link.url} target="_blank" rel="noreferrer" key={link.id}>
-                  {link.label || "Link"} <ExternalLink size={13} />
-                </a>
-              ))}
-            </span>
-          ) : (
-            "No link"
-          )}
-        </span>
-      </div>
 
       {contacts.length ? (
         <section className="contacts-compact" aria-label="Contacts">
@@ -236,13 +244,6 @@ function InterviewCard({
           ) : null}
         </div>
       )}
-
-      <div className="card-actions">
-        <button className="ghost-button" onClick={() => onEdit(normalized)}>
-          <Edit3 size={16} />
-          Edit
-        </button>
-      </div>
     </article>
   );
 }
