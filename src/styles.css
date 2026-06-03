@@ -1269,8 +1269,8 @@ textarea:focus {
   align-items: start;
   border-top: 1px solid var(--subtle);
   display: grid;
-  gap: 10px 24px;
-  grid-template-columns: minmax(320px, 0.34fr) minmax(360px, 1fr) minmax(350px, 420px);
+  gap: 10px 20px;
+  grid-template-columns: minmax(280px, 0.28fr) minmax(0, 1fr) minmax(430px, 500px);
   padding: 14px 16px;
 }
 
@@ -1365,7 +1365,7 @@ textarea:focus {
   align-items: end;
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(220px, 1fr) auto auto;
+  grid-template-columns: minmax(190px, 1fr) auto auto;
   justify-content: end;
 }
 
@@ -1419,9 +1419,9 @@ textarea:focus {
 }
 
 .detail-item {
-  align-items: flex-start;
+  align-items: baseline;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -1429,7 +1429,7 @@ textarea:focus {
   color: var(--ink);
   flex: 0 0 auto;
   font-size: 0.84rem;
-  line-height: 1.55;
+  line-height: 1.25;
 }
 
 .detail-value {
@@ -1520,8 +1520,8 @@ textarea:focus {
   align-items: baseline;
   display: grid;
   font-size: 0.94rem;
-  gap: 3px 12px;
-  grid-template-columns: minmax(180px, 0.45fr) minmax(220px, 1fr);
+  gap: 3px 24px;
+  grid-template-columns: minmax(0, 1fr) max-content;
   padding: 0;
 }
 
@@ -1541,6 +1541,7 @@ textarea:focus {
 .contact-identity b {
   color: var(--ink);
   font-size: 0.96rem;
+  white-space: nowrap;
 }
 
 .contact-identity small,
@@ -1551,6 +1552,7 @@ textarea:focus {
 
 .contact-identity small {
   font-size: 0.88rem;
+  white-space: nowrap;
 }
 
 .contact-methods {
@@ -1558,6 +1560,7 @@ textarea:focus {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
+  justify-content: flex-end;
   min-width: 0;
 }
 
