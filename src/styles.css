@@ -1944,6 +1944,7 @@ textarea:focus {
     grid-template-rows: auto auto;
     min-width: 0;
     padding-bottom: 18px;
+    scroll-margin-top: calc(102px + env(safe-area-inset-top, 0px));
   }
 
   .timeline-stage.is-final-stage {
@@ -1964,17 +1965,28 @@ textarea:focus {
 
   .timeline-stage-marker i {
     background: linear-gradient(180deg, var(--brand), var(--dragon));
-    border-radius: 999px;
-    clip-path: none;
+    clip-path: polygon(
+      39% 0,
+      61% 0,
+      61% calc(100% - 14px),
+      82% calc(100% - 14px),
+      50% 100%,
+      18% calc(100% - 14px),
+      39% calc(100% - 14px)
+    );
     height: 100%;
     min-height: 18px;
     min-width: 0;
-    width: 4px;
+    width: 18px;
   }
 
-  .timeline-stage.is-final-stage .timeline-stage-marker i,
+  .timeline-stage.is-final-stage .timeline-stage-marker {
+    grid-template-rows: 36px minmax(18px, 1fr) 36px;
+  }
+
   .timeline-end-dot {
-    display: none;
+    align-self: end;
+    justify-self: center;
   }
 
   .timeline-stage-body {
@@ -2087,6 +2099,13 @@ textarea:focus {
     font-size: 0.74rem;
     height: 22px;
     width: 22px;
+  }
+
+  .calendar-day-count {
+    font-size: 0.62rem;
+    height: 18px;
+    margin-top: 1px;
+    width: 18px;
   }
 
   .calendar-event-chip {

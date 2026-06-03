@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { Circle } from "lucide-react";
 import { normalizeInterview } from "../lib/interviewUtils";
 import { PIPELINE_STEPS, type Interview, type PipelineStep } from "../types/interview";
@@ -12,6 +12,7 @@ const visibleInterviewLimit = 3;
 
 export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
   const [expandedStages, setExpandedStages] = useState<Partial<Record<PipelineStep, boolean>>>({});
+  const stageRefs = useRef<Partial<Record<PipelineStep, HTMLElement | null>>>({});
   const normalizedInterviews = interviews.map(normalizeInterview);
   const interviewsByStage = timelineSteps.map((step) => ({
     step,
@@ -23,6 +24,25 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
   const timelineStyle = {
     "--timeline-stage-count": interviewsByStage.length
   } as CSSProperties;
+
+  const toggleStage = (step: PipelineStep, isExpanded: boolean) => {
+    setExpandedStages((current) => ({
+      ...current,
+      [step]: !current[step]
+    }));
+
+    if (!isExpanded) return;
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        stageRefs.current[step]?.scrollIntoView({
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+          block: "start"
+        });
+      });
+    });
+  };
 
   return (
     <section className="timeline-section" aria-label="Interview pipeline timeline">
@@ -47,6 +67,9 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
             <article
               className={`timeline-stage${isFinalStage ? " is-final-stage" : ""}`}
               key={stage.step}
+              ref={(node) => {
+                stageRefs.current[stage.step] = node;
+              }}
               role="listitem"
             >
               <div className="timeline-stage-marker" aria-hidden="true">
@@ -84,12 +107,7 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
                     className="timeline-more"
                     type="button"
                     aria-expanded={isExpanded}
-                    onClick={() =>
-                      setExpandedStages((current) => ({
-                        ...current,
-                        [stage.step]: !current[stage.step]
-                      }))
-                    }
+                    onClick={() => toggleStage(stage.step, isExpanded)}
                   >
                     {isExpanded ? "Show fewer" : `View ${hiddenCount} more`}
                   </button>
