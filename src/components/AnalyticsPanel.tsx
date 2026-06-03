@@ -21,7 +21,6 @@ const formatDate = (value?: string) => {
 
 export function AnalyticsPanel({ interviews }: AnalyticsPanelProps) {
   const analytics = getAnalytics(interviews);
-  const maxPipelineCount = Math.max(1, ...Object.values(analytics.byPipeline));
 
   return (
     <section className="analytics-grid" aria-label="Pipeline analytics">
@@ -49,30 +48,6 @@ export function AnalyticsPanel({ interviews }: AnalyticsPanelProps) {
         <CircleX size={21} />
         <span>Withdrawn</span>
         <strong>{analytics.withdrawn}</strong>
-      </article>
-
-      <article className="pipeline-card">
-        <div className="section-heading tight">
-          <div>
-            <h2>Interviews by pipeline</h2>
-            <p>{analytics.active} active records</p>
-          </div>
-        </div>
-        <div className="pipeline-bars">
-          {Object.entries(analytics.byPipeline).length ? (
-            Object.entries(analytics.byPipeline).map(([pipeline, count]) => (
-              <div className="bar-row" key={pipeline}>
-                <span>{pipeline}</span>
-                <div className="bar-track">
-                  <div style={{ width: `${(count / maxPipelineCount) * 100}%` }} />
-                </div>
-                <strong>{count}</strong>
-              </div>
-            ))
-          ) : (
-            <p className="empty-copy">Add or import interviews to see pipeline analytics.</p>
-          )}
-        </div>
       </article>
 
       <article className="pipeline-card">
