@@ -44,8 +44,8 @@ export function HomePage({
           </div>
           {[
             ["Comcast", "Data Products Co-op", "Interview Scheduled"],
-            ["PECO", "Project Controls", "Student Needs to Contact Employer"],
-            ["College Ave", "Data Engineering", "Waiting for Employer Response"]
+            ["PECO", "Project Controls", "Make Contact"],
+            ["College Ave", "Data Engineering", "Waiting for Employer Reply"]
           ].map(([company, role, pipeline]) => (
             <div className="preview-row" key={`${company}-${role}`}>
               <span>
