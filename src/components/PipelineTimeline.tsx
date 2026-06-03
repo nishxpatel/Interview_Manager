@@ -7,10 +7,8 @@ interface PipelineTimelineProps {
 }
 
 const nextStageLabels: Record<PipelineStep, string> = {
-  "Student Needs to Contact Employer": "Waiting for Employer Response",
-  "Waiting for Employer to Contact Student": "Scheduling in Progress",
-  "Waiting for Employer Response": "Scheduling in Progress",
-  "Scheduling in Progress": "Interview Scheduled",
+  "Make Contact": "Waiting for Employer Reply",
+  "Waiting for Employer Reply": "Interview Scheduled",
   "Interview Scheduled": "Interview Completed",
   "Interview Completed": "Done",
   Withdrawn: "Closed"

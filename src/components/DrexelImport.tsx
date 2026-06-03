@@ -29,9 +29,8 @@ export function DrexelImport({ onCancel, onImport }: DrexelImportProps) {
     } as Interview);
 
   const contactInstructionLabel = (pipeline: PipelineStep) => {
-    if (pipeline === "Student Needs to Contact Employer") return "Student contacts employer";
-    if (pipeline === "Waiting for Employer to Contact Student") return "Employer contacts student";
-    if (pipeline === "Scheduling in Progress") return "Scheduling through Drexel/employer";
+    if (pipeline === "Make Contact") return "Make contact";
+    if (pipeline === "Waiting for Employer Reply") return "Waiting for employer reply";
     return "Review imported instructions";
   };
 

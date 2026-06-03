@@ -1,5 +1,5 @@
 import type { Interview, InterviewDraft, InterviewLink } from "../types/interview";
-import { interviewToDraft, normalizeInterview } from "./interviewUtils";
+import { interviewToDraft, mapLegacyPipeline, normalizeInterview } from "./interviewUtils";
 
 export const INTERVIEW_CSV_HEADERS = [
   "company",
@@ -135,12 +135,12 @@ export const importInterviewsFromCsv = (csv: string): InterviewDraft[] => {
       values.get("jobDescriptionLink")?.trim() ||
       links.find((link) => link.type === "job-description" || link.type === "posting")?.url ||
       "";
-    const pipeline = values.get("pipeline") || "Student Needs to Contact Employer";
+    const pipeline = values.get("pipeline") || "Make Contact";
 
     return {
       company: values.get("company") ?? "",
       position: values.get("position") ?? "",
-      pipeline: pipeline as InterviewDraft["pipeline"],
+      pipeline: mapLegacyPipeline({ pipeline }) as InterviewDraft["pipeline"],
       interviewDateTime: values.get("interviewDateTime") ?? "",
       interviewFormat: (values.get("interviewFormat") || "Not set") as InterviewDraft["interviewFormat"],
       roundLabel: values.get("roundLabel") ?? "",

@@ -207,13 +207,13 @@ const findLabelValue = (lines: string[], label: string) => {
 const detectPipeline = (recordText: string, interviewType: string): PipelineStep => {
   const text = `${recordText} ${interviewType}`.toLowerCase();
   if (/employer\s+(will\s+)?contact|contact\s+student|will be contacted/.test(text)) {
-    return "Waiting for Employer to Contact Student";
+    return "Make Contact";
   }
   if (/student\s+(must\s+|should\s+|will\s+)?contact|contact\s+the?\s*employer|employer site|click\s+the\s+job\s+title/.test(text)) {
-    return "Student Needs to Contact Employer";
+    return "Make Contact";
   }
-  if (/steinbright|interview schedule|arrange|make changes|signup/.test(text)) return "Scheduling in Progress";
-  return "Student Needs to Contact Employer";
+  if (/steinbright|interview schedule|arrange|make changes|signup/.test(text)) return "Waiting for Employer Reply";
+  return "Make Contact";
 };
 
 const detectFormat = (recordText: string): InterviewFormat => {
