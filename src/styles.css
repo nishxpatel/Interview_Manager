@@ -721,9 +721,20 @@ h1 {
 }
 
 .timeline-more {
+  cursor: pointer;
+  gap: 8px;
+  justify-content: center;
   border-style: solid;
+  color: var(--brand-dark);
   font-weight: 700;
   min-height: 46px;
+  text-align: center;
+  width: 100%;
+}
+
+.timeline-more:hover {
+  background: color-mix(in srgb, var(--brand) 10%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
 }
 
 .stat-card {

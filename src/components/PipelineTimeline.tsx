@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { ArrowRight, Circle } from "lucide-react";
 import { normalizeInterview } from "../lib/interviewUtils";
 import { PIPELINE_STEPS, type Interview, type PipelineStep } from "../types/interview";
@@ -7,17 +7,20 @@ interface PipelineTimelineProps {
   interviews: Interview[];
 }
 
-const nextStageLabels: Record<PipelineStep, string> = {
+const timelineSteps = PIPELINE_STEPS.filter((step) => step !== "Withdrawn");
+const visibleInterviewLimit = 3;
+
+const nextStageLabels: Partial<Record<PipelineStep, string>> = {
   "Make Contact": "Waiting for Employer Reply",
   "Waiting for Employer Reply": "Interview Scheduled",
   "Interview Scheduled": "Interview Completed",
-  "Interview Completed": "Done",
-  Withdrawn: "Closed"
+  "Interview Completed": "Done"
 };
 
 export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
+  const [expandedStages, setExpandedStages] = useState<Partial<Record<PipelineStep, boolean>>>({});
   const normalizedInterviews = interviews.map(normalizeInterview);
-  const interviewsByStage = PIPELINE_STEPS.map((step) => ({
+  const interviewsByStage = timelineSteps.map((step) => ({
     step,
     nextStage: nextStageLabels[step],
     interviews: normalizedInterviews
@@ -34,48 +37,69 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
       <div className="section-heading tight timeline-heading">
         <div>
           <h2>Pipeline timeline</h2>
-          <p>{activeCount} interviews placed across {PIPELINE_STEPS.length} stages</p>
+          <p>{activeCount} interviews placed across {timelineSteps.length} stages</p>
         </div>
       </div>
 
       <div className="pipeline-timeline" role="list" style={timelineStyle}>
-        {interviewsByStage.map((stage, index) => (
-          <article className="timeline-stage" key={stage.step} role="listitem">
-            <div className="timeline-stage-marker" aria-hidden="true">
-              <span className="timeline-dot">
-                <Circle size={12} fill="currentColor" />
-              </span>
-              {index < interviewsByStage.length - 1 ? <i /> : null}
-            </div>
+        {interviewsByStage.map((stage, index) => {
+          const isExpanded = Boolean(expandedStages[stage.step]);
+          const hasMore = stage.interviews.length > visibleInterviewLimit;
+          const visibleInterviews = isExpanded
+            ? stage.interviews
+            : stage.interviews.slice(0, visibleInterviewLimit);
+          const hiddenCount = stage.interviews.length - visibleInterviewLimit;
 
-            <div className="timeline-stage-body">
-              <div className="timeline-stage-header">
-                <span>{stage.interviews.length}</span>
-                <h3>{stage.step}</h3>
+          return (
+            <article className="timeline-stage" key={stage.step} role="listitem">
+              <div className="timeline-stage-marker" aria-hidden="true">
+                <span className="timeline-dot">
+                  <Circle size={12} fill="currentColor" />
+                </span>
+                {index < interviewsByStage.length - 1 ? <i /> : null}
               </div>
-              <div className="timeline-next">
-                <ArrowRight size={17} />
-                <span>Next: {stage.nextStage}</span>
-              </div>
-            </div>
 
-            <div className="timeline-interviews">
-              {stage.interviews.length ? (
-                stage.interviews.slice(0, 4).map((interview) => (
-                  <span className="timeline-interview-chip" key={interview.id}>
-                    <strong>{interview.company || "Unnamed company"}</strong>
-                    <small>{interview.position || "Position not set"}</small>
-                  </span>
-                ))
-              ) : (
-                <span className="timeline-empty">No interviews</span>
-              )}
-              {stage.interviews.length > 4 ? (
-                <span className="timeline-more">+{stage.interviews.length - 4} more</span>
-              ) : null}
-            </div>
-          </article>
-        ))}
+              <div className="timeline-stage-body">
+                <div className="timeline-stage-header">
+                  <span>{stage.interviews.length}</span>
+                  <h3>{stage.step}</h3>
+                </div>
+                <div className="timeline-next">
+                  <ArrowRight size={17} />
+                  <span>Next: {stage.nextStage}</span>
+                </div>
+              </div>
+
+              <div className="timeline-interviews">
+                {stage.interviews.length ? (
+                  visibleInterviews.map((interview) => (
+                    <span className="timeline-interview-chip" key={interview.id}>
+                      <strong>{interview.company || "Unnamed company"}</strong>
+                      <small>{interview.position || "Position not set"}</small>
+                    </span>
+                  ))
+                ) : (
+                  <span className="timeline-empty">No interviews</span>
+                )}
+                {hasMore ? (
+                  <button
+                    className="timeline-more"
+                    type="button"
+                    aria-expanded={isExpanded}
+                    onClick={() =>
+                      setExpandedStages((current) => ({
+                        ...current,
+                        [stage.step]: !current[stage.step]
+                      }))
+                    }
+                  >
+                    {isExpanded ? "Show fewer" : `View ${hiddenCount} more`}
+                  </button>
+                ) : null}
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
