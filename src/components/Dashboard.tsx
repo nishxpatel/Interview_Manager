@@ -378,12 +378,7 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
     <section className="dashboard-shell">
       <div className="dashboard-hero">
         <div>
-          <p className="eyebrow">Dashboard</p>
-          <h1>Interview pipeline</h1>
-          <p>
-            Track employer communication, scheduled rounds, interview prep, and follow-ups after
-            an interview has been granted.
-          </p>
+          <h1>Interview Manager</h1>
         </div>
         <div className="dashboard-actions">
           <button className="secondary-button" onClick={() => setIsImportOpen(true)}>

@@ -354,14 +354,14 @@ button:disabled {
 }
 
 .dashboard-hero {
-  align-items: start;
+  align-items: center;
   gap: 18px;
-  grid-template-columns: minmax(0, 1fr);
-  margin-bottom: 20px;
+  grid-template-columns: minmax(280px, 0.42fr) minmax(520px, 1fr);
+  margin-bottom: 22px;
 }
 
 .dashboard-actions {
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 
 .eyebrow {
@@ -389,6 +389,7 @@ h1 {
 
 .dashboard-hero h1 {
   font-size: clamp(2rem, 3.4vw, 3rem);
+  margin-bottom: 0;
 }
 
 .hero-copy > p:not(.eyebrow),
@@ -1890,6 +1891,10 @@ textarea:focus {
 
   .desktop-nav-control {
     display: none;
+  }
+
+  .dashboard-actions {
+    justify-content: flex-start;
   }
 
   .mobile-account-menu {
