@@ -142,7 +142,6 @@ export function ScheduledCalendar({ interviews, onEdit }: ScheduledCalendarProps
       <div className="section-heading">
         <div>
           <h2>Calendar</h2>
-          <p>{scheduledInterviews.length} scheduled interview rounds</p>
         </div>
         <div className="calendar-controls">
           <button

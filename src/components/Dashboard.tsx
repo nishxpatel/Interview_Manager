@@ -448,7 +448,6 @@ export function Dashboard({ user, hasFirebaseConfig }: DashboardProps) {
         <div className="section-heading">
           <div>
             <h2>All interviews</h2>
-            <p>{filteredInterviews.length} shown</p>
           </div>
           {hasActiveFilters ? (
             <button className="ghost-button" onClick={() => setFilters(emptyFilters)}>

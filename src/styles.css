@@ -569,17 +569,13 @@ h1 {
   margin-bottom: 24px;
 }
 
-.timeline-heading h2 {
-  font-size: clamp(1.55rem, 1.5vw, 2rem);
-  line-height: 1.1;
-}
-
 .timeline-summary {
   align-items: stretch;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  justify-content: flex-end;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .timeline-summary-card {
@@ -809,8 +805,16 @@ h1 {
 
 .section-heading h2,
 .section-heading h3 {
-  font-size: 1.1rem;
   margin-bottom: 2px;
+}
+
+.section-heading h2 {
+  font-size: clamp(1.35rem, 1.25vw, 1.65rem);
+  line-height: 1.15;
+}
+
+.section-heading h3 {
+  font-size: 1.1rem;
 }
 
 .pipeline-bars {

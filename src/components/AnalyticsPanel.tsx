@@ -27,7 +27,6 @@ export function AnalyticsPanel({ interviews }: AnalyticsPanelProps) {
         <div className="section-heading tight">
           <div>
             <h2>Scheduled interviews</h2>
-            <p>Upcoming rounds and recently elapsed interview times</p>
           </div>
         </div>
         <div className="scheduled-list">

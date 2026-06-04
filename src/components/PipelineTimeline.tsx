@@ -48,9 +48,6 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
   return (
     <section className="timeline-section" aria-label="Interview pipeline timeline">
       <div className="section-heading tight timeline-heading">
-        <div>
-          <h2>Pipeline timeline</h2>
-        </div>
         <div className="timeline-summary" aria-label="Interview summary">
           <span className="timeline-summary-card is-primary">
             <Target size={22} />
