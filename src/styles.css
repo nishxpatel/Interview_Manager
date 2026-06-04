@@ -574,8 +574,7 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  justify-content: space-between;
-  width: 100%;
+  justify-content: flex-end;
 }
 
 .timeline-summary-card {
