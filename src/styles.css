@@ -526,7 +526,6 @@ h1 {
 }
 
 .feature-grid article,
-.stat-card,
 .pipeline-card,
 .table-section,
 .empty-state {
@@ -564,6 +563,8 @@ h1 {
 }
 
 .timeline-heading {
+  align-items: flex-start;
+  gap: 18px;
   margin-bottom: 24px;
 }
 
@@ -572,8 +573,56 @@ h1 {
   line-height: 1.1;
 }
 
-.timeline-heading p {
-  font-size: clamp(1rem, 1vw, 1.18rem);
+.timeline-summary {
+  align-items: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.timeline-summary-card {
+  align-items: center;
+  background: var(--surface-strong);
+  border: 1px solid var(--subtle);
+  border-radius: 8px;
+  color: var(--muted);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 24px minmax(0, 1fr);
+  min-height: 62px;
+  min-width: 150px;
+  padding: 10px 13px;
+}
+
+.timeline-summary-card svg {
+  color: var(--brand);
+}
+
+.timeline-summary-card small {
+  color: var(--chip-text);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.timeline-summary-card strong {
+  color: var(--ink);
+  display: block;
+  font-size: 1.6rem;
+  line-height: 1;
+  margin-top: 4px;
+}
+
+.timeline-summary-card.is-primary {
+  background: color-mix(in srgb, var(--brand) 8%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--brand) 30%, var(--line));
+  min-width: 190px;
+}
+
+.timeline-summary-card.is-primary strong {
+  font-size: 2.1rem;
 }
 
 .pipeline-timeline {
@@ -738,26 +787,6 @@ h1 {
 .timeline-more:hover {
   background: color-mix(in srgb, var(--brand) 10%, var(--surface-strong));
   border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
-}
-
-.stat-card {
-  display: grid;
-  gap: 8px;
-  padding: 18px;
-}
-
-.stat-card svg {
-  color: var(--brand);
-}
-
-.stat-card span {
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
-.stat-card strong {
-  font-size: 2rem;
-  line-height: 1;
 }
 
 .pipeline-card {
@@ -1928,6 +1957,18 @@ textarea:focus {
 
   .timeline-section {
     padding: 16px;
+  }
+
+  .timeline-heading {
+    align-items: stretch;
+  }
+
+  .timeline-summary {
+    justify-content: flex-start;
+  }
+
+  .timeline-summary-card {
+    flex: 1 1 170px;
   }
 
   .pipeline-timeline {

@@ -1,5 +1,5 @@
 import { useRef, useState, type CSSProperties } from "react";
-import { Circle } from "lucide-react";
+import { Circle, CircleX, Target } from "lucide-react";
 import { normalizeInterview } from "../lib/interviewUtils";
 import { PIPELINE_STEPS, type Interview, type PipelineStep } from "../types/interview";
 
@@ -20,7 +20,8 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
       .filter((interview) => interview.pipeline === step)
       .sort((left, right) => left.company.localeCompare(right.company))
   }));
-  const activeCount = interviewsByStage.reduce((sum, stage) => sum + stage.interviews.length, 0);
+  const totalCount = normalizedInterviews.length;
+  const withdrawnCount = normalizedInterviews.filter((interview) => interview.pipeline === "Withdrawn").length;
   const timelineStyle = {
     "--timeline-stage-count": interviewsByStage.length
   } as CSSProperties;
@@ -49,7 +50,22 @@ export function PipelineTimeline({ interviews }: PipelineTimelineProps) {
       <div className="section-heading tight timeline-heading">
         <div>
           <h2>Pipeline timeline</h2>
-          <p>{activeCount} interviews placed across {timelineSteps.length} stages</p>
+        </div>
+        <div className="timeline-summary" aria-label="Interview summary">
+          <span className="timeline-summary-card is-primary">
+            <Target size={22} />
+            <span>
+              <small>Total interviews</small>
+              <strong>{totalCount}</strong>
+            </span>
+          </span>
+          <span className="timeline-summary-card">
+            <CircleX size={20} />
+            <span>
+              <small>Withdrawn</small>
+              <strong>{withdrawnCount}</strong>
+            </span>
+          </span>
         </div>
       </div>
 

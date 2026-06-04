@@ -1,4 +1,3 @@
-import { CalendarDays, CircleCheck, CircleX, Mail, Target } from "lucide-react";
 import { getAnalytics } from "../lib/analytics";
 import { getCountdownText } from "../lib/interviewUtils";
 import type { Interview } from "../types/interview";
@@ -23,33 +22,7 @@ export function AnalyticsPanel({ interviews }: AnalyticsPanelProps) {
   const analytics = getAnalytics(interviews);
 
   return (
-    <section className="analytics-grid" aria-label="Pipeline analytics">
-      <article className="stat-card">
-        <Target size={21} />
-        <span>Total interviews</span>
-        <strong>{analytics.total}</strong>
-      </article>
-      <article className="stat-card">
-        <Mail size={21} />
-        <span>Communication needed</span>
-        <strong>{analytics.communicationNeeded}</strong>
-      </article>
-      <article className="stat-card">
-        <CalendarDays size={21} />
-        <span>Upcoming scheduled</span>
-        <strong>{analytics.upcoming}</strong>
-      </article>
-      <article className="stat-card">
-        <CircleCheck size={21} />
-        <span>Interview completed</span>
-        <strong>{analytics.completed}</strong>
-      </article>
-      <article className="stat-card">
-        <CircleX size={21} />
-        <span>Withdrawn</span>
-        <strong>{analytics.withdrawn}</strong>
-      </article>
-
+    <section className="analytics-grid" aria-label="Scheduled interview analytics">
       <article className="pipeline-card">
         <div className="section-heading tight">
           <div>
